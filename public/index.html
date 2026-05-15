@@ -185,7 +185,7 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* Animated Shimmer Button */
+        /* Buttons */
         .btn {
             position: relative;
             overflow: hidden;
@@ -225,6 +225,52 @@
         .btn:hover::after {
             left: 120%;
         }
+
+        .gps-btn {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+        .gps-btn:hover { background: rgba(0, 242, 254, 0.2); }
+
+        .export-btn {
+            background: rgba(240, 171, 252, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+        .export-btn:hover { background: rgba(240, 171, 252, 0.2); }
+
+        .clear-btn {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            color: #ff4d4d;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            width: 100%;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+        .clear-btn:hover { background: rgba(255, 77, 77, 0.2); }
 
         /* Sidebar Stats */
         .stat-card {
@@ -271,24 +317,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        .clear-btn {
-            background: rgba(255, 77, 77, 0.1);
-            border: 1px solid rgba(255, 77, 77, 0.3);
-            color: #ff4d4d;
-            cursor: pointer;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-top: 20px;
-            width: 100%;
-            transition: 0.3s;
-        }
-
-        .clear-btn:hover {
-            background: rgba(255, 77, 77, 0.2);
-        }
-
         /* Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { 
@@ -323,6 +351,11 @@
             <div id="loc-status">
                 <i class="fas fa-crosshairs"></i> Awaiting precise location...
             </div>
+            
+            <!-- NEW: GPS AUTO-LOCATE BUTTON -->
+            <button class="gps-btn" onclick="useCurrentLocation()">
+                <i class="fas fa-location-arrow"></i> Use My GPS Location
+            </button>
         </div>
 
         <!-- DETAILS SECTION -->
@@ -330,7 +363,6 @@
             <h3><i class="fas fa-camera-retro" style="color: var(--accent);"></i> 2. Device Details</h3>
             
             <label style="margin-top: 15px;">Visual Verification</label>
-            <!-- Hidden file input, triggered by the label below -->
             <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)" style="display: none;">
             <label for="file-input" class="upload-zone">
                 <i class="fas fa-cloud-upload-alt"></i>
@@ -365,6 +397,11 @@
             <h4 style="margin-top:0; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;">Recent Recoveries</h4>
             <div id="activity-list"></div>
             
+            <!-- NEW: EXPORT DATA BUTTON -->
+            <button class="export-btn" onclick="exportData()">
+                <i class="fas fa-download"></i> Export Recovery Log
+            </button>
+            
             <button class="clear-btn" onclick="clearData()">
                 <i class="fas fa-trash-alt"></i> Wipe Network Data
             </button>
@@ -379,53 +416,76 @@
     let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
     let selectedCoords = [19.076, 72.877];
     let capturedImage = "";
+    let previousPoints = 0;
 
-    // --- MAP INITIALIZATION (SATELLITE) ---
-    const map = L.map('map', { 
-        zoomControl: false,
-        attributionControl: false 
-    }).setView(selectedCoords, 16); 
+    // --- CUSTOM TOAST NOTIFICATIONS ---
+    function showToast(message, type = "success") {
+        const toast = document.createElement('div');
+        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
+        toast.style.cssText = `
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: ${type === 'error' ? 'rgba(255, 77, 77, 0.9)' : 'rgba(0, 242, 254, 0.9)'};
+            color: ${type === 'error' ? '#fff' : '#030712'};
+            padding: 12px 24px; border-radius: 50px; font-weight: 700; font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 9999; display: flex; align-items: center; gap: 8px;
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.style.transform = 'translateX(-50%) translateY(0)', 10);
+        setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) translateY(100px)';
+            setTimeout(() => toast.remove(), 400);
+        }, 3000);
+    }
 
-    // Esri World Imagery (High-Quality Satellite)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-    }).addTo(map);
+    // --- MAP INITIALIZATION ---
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(selectedCoords, 15);
 
-    // Subtle Street Labels overlay
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        pane: 'shadowPane',
-        opacity: 0.6
-    }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { pane: 'shadowPane' }).addTo(map);
 
-    // Custom Glowing Marker
     let marker = L.marker(selectedCoords, {
         draggable: true,
         icon: L.divIcon({
             className: 'custom-div-icon',
-            html: "<div style='background-color:var(--primary); width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 20px var(--primary);'></div>",
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
+            html: "<div style='background-color:var(--primary); width:15px; height:15px; border-radius:50%; border:2px solid white; box-shadow:0 0 15px var(--primary);'></div>",
+            iconSize: [15, 15],
+            iconAnchor: [7, 7]
         })
     }).addTo(map);
 
-    // Map Click Interaction
-    map.on('click', function(e) {
-        selectedCoords = [e.latlng.lat, e.latlng.lng];
-        marker.setLatLng(e.latlng);
-        map.panTo(e.latlng);
-        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`;
-        document.getElementById('loc-status').style.color = '#00ff00';
+    map.on('click', function(e) { updateLocation(e.latlng.lat, e.latlng.lng); });
+    marker.on('dragend', function(e) { 
+        const pos = marker.getLatLng(); 
+        updateLocation(pos.lat, pos.lng); 
     });
 
-    // Marker Drag Interaction
-    marker.on('dragend', function(e) {
-        const position = marker.getLatLng();
-        selectedCoords = [position.lat, position.lng];
-        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`;
+    function updateLocation(lat, lng) {
+        selectedCoords = [lat, lng];
+        marker.setLatLng([lat, lng]);
+        map.panTo([lat, lng]);
+        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
         document.getElementById('loc-status').style.color = '#00ff00';
-    });
+    }
 
-    // --- IMAGE UPLOAD LOGIC ---
+    // --- GPS AUTO-LOCATE ---
+    function useCurrentLocation() {
+        if ("geolocation" in navigator) {
+            showToast("Acquiring satellite lock...", "success");
+            navigator.geolocation.getCurrentPosition(position => {
+                updateLocation(position.coords.latitude, position.coords.longitude);
+                map.setZoom(18);
+                showToast("GPS Lock Acquired!");
+            }, error => {
+                showToast("Location access denied or unavailable.", "error");
+            });
+        } else {
+            showToast("Geolocation not supported by this browser.", "error");
+        }
+    }
+
+    // --- IMAGE HANDLING ---
     function previewImage(event) {
         const file = event.target.files[0];
         if (file) {
@@ -435,35 +495,33 @@
                 const preview = document.getElementById('preview');
                 preview.src = capturedImage;
                 preview.style.display = 'block';
-                // Hide the upload zone to save space once an image is chosen
                 document.querySelector('.upload-zone').style.display = 'none';
             }
             reader.readAsDataURL(file);
         }
     }
 
-    // --- SUBMIT LOGIC ---
+    // --- DATA MANAGEMENT ---
     function addEntry() {
         const name = document.getElementById('item-name').value;
         const pts = parseInt(document.getElementById('item-cat').value);
 
         if (!name || !capturedImage) {
-            alert("⚠️ Please provide both a device photo and a device name.");
+            showToast("Please upload a photo and enter an item name.", "error");
             return;
         }
 
         const entry = {
-            name,
-            points: pts,
-            image: capturedImage,
-            coords: selectedCoords,
-            date: new Date().toLocaleDateString()
+            id: Date.now(),
+            name, points: pts, image: capturedImage, coords: selectedCoords, date: new Date().toLocaleDateString()
         };
 
         data.items.unshift(entry);
+        previousPoints = data.points;
         data.points += pts;
         localStorage.setItem('ecocycle_v4', JSON.stringify(data));
         
+        showToast(`Success! +${pts} Green Credits earned.`);
         updateUI();
         resetForm();
     }
@@ -472,18 +530,54 @@
         document.getElementById('item-name').value = "";
         document.getElementById('file-input').value = "";
         document.getElementById('preview').style.display = 'none';
-        document.querySelector('.upload-zone').style.display = 'block'; // Bring back the upload button
+        document.querySelector('.upload-zone').style.display = 'block';
         capturedImage = "";
     }
 
-    // --- UI UPDATES ---
+    // --- EXPORT DATA ---
+    function exportData() {
+        if (data.items.length === 0) return showToast("No data to export.", "error");
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "ecocycle_backup_" + new Date().getTime() + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        showToast("Data exported successfully!");
+    }
+
+    // --- SHARE FUNCTION ---
+    function shareItem(name, points) {
+        if (navigator.share) {
+            navigator.share({
+                title: 'EcoCycle Recovery',
+                text: `I just safely recovered a ${name} and earned ${points} Green Credits on EcoCycle! 🌍♻️`,
+            }).catch(console.error);
+        } else {
+            showToast("Sharing not supported on this browser.", "error");
+        }
+    }
+
+    // --- UI RENDERING & ANIMATIONS ---
+    function animateValue(id, start, end, duration) {
+        if (start === end) return;
+        const obj = document.getElementById(id);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+    }
+
     function updateUI() {
-        // Animate points counting up (basic implementation)
-        const pointsDisplay = document.getElementById('total-points');
-        pointsDisplay.innerText = data.points;
+        animateValue("total-points", previousPoints, data.points, 1000);
+        previousPoints = data.points;
 
         const list = document.getElementById('activity-list');
-        
         if (data.items.length === 0) {
             list.innerHTML = `<p style="text-align:center; opacity:0.4; font-size: 0.9rem; padding: 20px 0;">No active recoveries logged.</p>`;
             return;
@@ -498,8 +592,13 @@
                         <i class="far fa-calendar-alt"></i> ${i.date} • <span style="color: var(--primary); font-weight: 600;">+${i.points} pts</span>
                     </div>
                 </div>
-                <div style="background: rgba(0, 242, 254, 0.1); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Lat: ${i.coords[0].toFixed(3)}, Lon: ${i.coords[1].toFixed(3)}">
-                    <i class="fas fa-location-arrow" style="color:var(--primary); font-size: 0.9rem;"></i>
+                <div style="display:flex; gap: 8px;">
+                    <div style="background: rgba(240, 171, 252, 0.1); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="shareItem('${i.name}', ${i.points})" title="Share">
+                        <i class="fas fa-share-alt" style="color:var(--accent); font-size: 0.9rem;"></i>
+                    </div>
+                    <div style="background: rgba(0, 242, 254, 0.1); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Lat: ${i.coords[0].toFixed(3)}, Lon: ${i.coords[1].toFixed(3)}">
+                        <i class="fas fa-location-arrow" style="color:var(--primary); font-size: 0.9rem;"></i>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -507,13 +606,18 @@
 
     function clearData() {
         if(confirm("⚠️ Are you sure you want to wipe all local recovery data? This cannot be undone.")) {
+            previousPoints = 0;
             data = { items: [], points: 0 };
             localStorage.removeItem('ecocycle_v4');
+            document.getElementById('total-points').innerText = "0";
             updateUI();
+            showToast("Network data wiped.", "error");
         }
     }
 
-    // Initialize UI on load
+    // Init
+    document.getElementById('total-points').innerText = data.points;
+    previousPoints = data.points;
     updateUI();
 </script>
 </body>
