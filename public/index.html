@@ -3,244 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCycle Omnia | The Future of Recycling</title>
+    <title>EcoCycle Simple</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-
         :root {
-            --primary: #00ffa3;
-            --accent: #bc13fe;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-heavy: rgba(15, 23, 42, 0.8);
-            --border: rgba(255, 255, 255, 0.1);
+            --primary: #22c55e;
+            --bg: #f8fafc;
+            --text: #1e293b;
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            margin: 0; color: white; min-height: 100vh;
-            background: #020617;
-            background-image: radial-gradient(at 0% 0%, rgba(0, 255, 163, 0.15) 0, transparent 50%), 
-                              radial-gradient(at 100% 100%, rgba(188, 19, 254, 0.15) 0, transparent 50%);
-            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; background-color: var(--bg); color: var(--text);
         }
 
-        .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; }
-        
-        /* Navbar & Ticker */
-        nav { padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid var(--border); }
-        .ticker-wrap { background: var(--primary); color: black; padding: 5px 0; font-size: 12px; font-weight: 800; overflow: hidden; }
-        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; }
-        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        /* Top Bar */
+        nav {
+            background: white; padding: 15px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
 
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 20px; }
-        .grid-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 25px; }
+        .logo { font-weight: bold; color: var(--primary); font-size: 20px; }
 
-        /* Navigation Sidebar */
-        .nav-card { padding: 20px; position: sticky; top: 100px; }
-        .nav-link { width: 100%; padding: 15px; margin-bottom: 8px; border-radius: 15px; border: none; background: transparent; color: rgba(255,255,255,0.6); text-align: left; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.3s; font-size: 15px; }
-        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.05); color: var(--primary); box-shadow: inset 0 0 10px rgba(0,255,163,0.1); }
-        .nav-link i { font-size: 18px; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
 
-        /* Main Content */
-        .card { padding: 30px; margin-bottom: 25px; transition: 0.3s; }
-        #map { height: 450px; border-radius: 20px; border: 1px solid var(--border); filter: grayscale(0.5) contrast(1.2); }
-
-        /* Leaderboard */
-        .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
-        .rank-number { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+        /* Main Components */
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #map { height: 350px; border-radius: 8px; margin-top: 15px; border: 1px solid #e2e8f0; }
 
         /* Form Elements */
-        input, select { width: 100%; padding: 14px; margin: 10px 0; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: white; outline: none; }
-        .action-btn { background: var(--primary); color: black; border: none; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; text-transform: uppercase; letter-spacing: 1px; }
-        .action-btn:hover { filter: brightness(1.2); transform: scale(1.01); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #16a34a; }
 
-        .hidden { display: none; }
-        
-        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } .nav-card { position: static; } }
+        /* Simple Counter */
+        .stat-card { text-align: center; padding: 15px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; }
+        .points { font-size: 24px; font-weight: bold; color: var(--primary); }
+
+        /* History List */
+        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .status-badge { background: #e2e8f0; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+        @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<div class="ticker-wrap">
-    <div class="ticker-move">
-        GLOBAL UPDATE: 1.2M TONS OF E-WASTE RECYCLED THIS MONTH • NEW PICKUP CENTER OPENED IN SECTOR 7 • EARN DOUBLE CREDITS FOR LITHIUM BATTERIES THIS WEEK • 
-    </div>
-</div>
-
 <nav>
-    <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); letter-spacing: -1px;"><i class="fas fa-leaf"></i> OMNIA</div>
-    <div id="nav-info" class="hidden" style="display:flex; gap:20px; align-items: center;">
-        <div class="glass" style="padding: 10px 20px; border-radius: 15px;">
-            <i class="fas fa-shield-virus" style="color: var(--accent);"></i> <span id="user-rank">Novice Recycler</span>
-        </div>
-        <div class="glass" style="padding: 10px 20px; border-radius: 15px; border-color: var(--primary);">
-            <i class="fas fa-bolt" style="color: var(--primary);"></i> <span id="points-val">0</span> Credits
-        </div>
-    </div>
+    <div class="logo"><i class="fas fa-recycle"></i> EcoCycle</div>
+    <div id="user-display" style="font-weight: 500;">Welcome, Guest</div>
 </nav>
 
 <div class="container">
-    <!-- AUTHENTICATION -->
-    <div id="auth-view" class="glass card" style="max-width: 450px; margin: 60px auto; text-align: center;">
-        <h1 style="margin-top:0">Welcome to Omnia</h1>
-        <p style="opacity: 0.6;">The decentralized e-waste recovery network.</p>
-        <input type="text" id="username" placeholder="Protocol Username">
-        <select id="user-type">
-            <option value="user">Eco-Citizen</option>
-            <option value="admin">System Admin</option>
-        </select>
-        <button class="action-btn" onclick="initApp()">Initialize Protocol</button>
+    <!-- LEFT COLUMN -->
+    <div class="main-content">
+        <!-- STEP 1: DROP OFF LOCATIONS -->
+        <div class="box">
+            <h3 style="margin-top:0"><i class="fas fa-map-marker-alt"></i> Find Nearby Drop-off</h3>
+            <p style="font-size: 14px; color: #64748b;">Click the markers on the map to see center hours.</p>
+            <div id="map"></div>
+        </div>
+
+        <!-- STEP 2: LOG ITEM -->
+        <div class="box">
+            <h3><i class="fas fa-plus"></i> New Disposal Entry</h3>
+            <label>What are you recycling?</label>
+            <input type="text" id="item-name" placeholder="e.g. Old Laptop, Phone Charger">
+            
+            <label>Category</label>
+            <select id="item-cat">
+                <option value="100">Small Electronics (100 pts)</option>
+                <option value="500">Large Appliances (500 pts)</option>
+                <option value="50">Batteries/Cables (50 pts)</option>
+            </select>
+
+            <div style="margin: 15px 0;">
+                <input type="checkbox" id="pickup-toggle" style="width:auto"> 
+                <label for="pickup-toggle" style="font-size:14px">Request Home Pickup?</label>
+            </div>
+
+            <button class="btn" onclick="addEntry()">Submit Entry</button>
+        </div>
     </div>
 
-    <!-- MAIN APP INTERFACE -->
-    <div id="app-view" class="hidden">
-        <div class="grid-layout">
-            <!-- SIDEBAR NAV -->
-            <div class="sidebar">
-                <div class="glass nav-card">
-                    <button class="nav-link active" onclick="showTab('tab-map')"><i class="fas fa-map"></i> Deployment Map</button>
-                    <button class="nav-link" onclick="showTab('tab-wiki')"><i class="fas fa-book-open"></i> Recycle Wiki</button>
-                    <button class="nav-link" onclick="showTab('tab-market')"><i class="fas fa-shopping-bag"></i> Nexus Store</button>
-                    <button class="nav-link" onclick="showTab('tab-history')"><i class="fas fa-history"></i> Log History</button>
-                    <hr style="border:0; border-top:1px solid var(--border); margin: 15px 0;">
-                    <div style="padding: 10px;">
-                        <small style="opacity:0.5">V3.5.0 STABLE</small>
-                    </div>
-                </div>
+    <!-- RIGHT COLUMN -->
+    <div class="sidebar">
+        <!-- POINTS BOX -->
+        <div class="box stat-card">
+            <p style="margin:0; color: #64748b; font-size: 14px;">Total Credits Earned</p>
+            <div class="points" id="total-points">0</div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="box">
+            <h4 style="margin-top:0">Recent Activity</h4>
+            <div id="activity-list">
+                <p style="font-size: 13px; color: #94a3b8;">No entries yet.</p>
             </div>
-
-            <!-- CENTER WORKSPACE -->
-            <div class="workspace">
-                <!-- TAB: MAP -->
-                <div id="tab-map" class="tab-pane">
-                    <div class="glass card">
-                        <div id="map"></div>
-                    </div>
-                    <div class="glass card">
-                        <h3><i class="fas fa-plus-circle"></i> Log New Material</h3>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                            <input type="text" id="item-input" placeholder="Device Name">
-                            <select id="cat-input">
-                                <option>Smartphones</option><option>Hardware</option><option>Batteries</option><option>Appliances</option>
-                            </select>
-                        </div>
-                        <input type="file" id="img-input" style="font-size: 12px;">
-                        <button class="action-btn" onclick="pushLog()">Log to Blockchain</button>
-                    </div>
-                </div>
-
-                <!-- TAB: WIKI -->
-                <div id="tab-wiki" class="tab-pane hidden">
-                    <div class="glass card">
-                        <h2>Recycling Encyclopedia</h2>
-                        <div style="display:grid; gap:20px;">
-                            <div class="glass" style="padding:15px;">
-                                <h4 style="color:var(--primary)">Lithium-Ion Batteries</h4>
-                                <p style="font-size:14px; opacity:0.7;">Extremely hazardous. Must be taped at terminals and never thrown in regular bins. Contains Cobalt and Lithium.</p>
-                            </div>
-                            <div class="glass" style="padding:15px;">
-                                <h4 style="color:var(--primary)">CRT Monitors</h4>
-                                <p style="font-size:14px; opacity:0.7;">Contain up to 4kg of lead. Require specialized high-heat processing to recover glass safely.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB: HISTORY -->
-                <div id="tab-history" class="tab-pane hidden">
-                    <div class="glass card">
-                        <h2>Personal Transmission Logs</h2>
-                        <div id="history-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT INFO PANEL -->
-            <div class="info-panel">
-                <div class="glass card" style="border-color: var(--accent);">
-                    <h4><i class="fas fa-trophy" style="color:var(--primary)"></i> Leaderboard</h4>
-                    <div id="leaderboard-box">
-                        <div class="rank-item"><span>1. Sarah J.</span><b>4,200 Cr</b></div>
-                        <div class="rank-item"><span>2. Mark Tech</span><b>3,850 Cr</b></div>
-                        <div class="rank-item"><span>3. You</span><b id="your-rank-val">0 Cr</b></div>
-                    </div>
-                </div>
-
-                <div class="glass card">
-                    <h4>Impact Stats</h4>
-                    <div style="text-align:center; padding: 10px;">
-                        <h2 style="margin:0; color:var(--primary);">45.2 kg</h2>
-                        <p style="font-size:12px; opacity:0.5;">CO2 Offset Contribution</p>
-                    </div>
-                </div>
-            </div>
+            <button class="btn" style="background: #f1f5f9; color: #475569; margin-top: 10px; font-size: 12px;" onclick="clearData()">Clear History</button>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let omniaDB = JSON.parse(localStorage.getItem('omnia_v3')) || { logs: [], points: 0 };
-    let user = "";
+    // Simple Database Logic
+    let data = JSON.parse(localStorage.getItem('ecocycle_simple')) || { items: [], points: 0 };
 
-    const map = L.map('map', { zoomControl: false }).setView([19.076, 72.877], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    // Initialize Map
+    const map = L.map('map').setView([19.076, 72.877], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    function initApp() {
-        user = document.getElementById('username').value || "Agent_Null";
-        document.getElementById('auth-view').classList.add('hidden');
-        document.getElementById('app-view').classList.remove('hidden');
-        document.getElementById('nav-info').classList.remove('hidden');
-        refreshUI();
-        setTimeout(() => map.invalidateSize(), 400);
-    }
+    // Add some fake centers
+    const centers = [
+        {name: "City E-Waste Center", pos: [19.076, 72.877]},
+        {name: "Green Earth Recycling", pos: [19.120, 72.900]},
+        {name: "Tech Recovery Hub", pos: [19.030, 72.850]}
+    ];
+    centers.forEach(c => L.marker(c.pos).addTo(map).bindPopup(c.name));
 
-    function showTab(id) {
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
-    }
+    function addEntry() {
+        const name = document.getElementById('item-name').value;
+        const pointsToAdd = parseInt(document.getElementById('item-cat').value);
+        const needsPickup = document.getElementById('pickup-toggle').checked;
 
-    function pushLog() {
-        const item = document.getElementById('item-input').value;
-        if(!item) return;
+        if (!name) return alert("Please enter the item name.");
 
-        const newEntry = {
-            id: Date.now(),
-            item,
-            cat: document.getElementById('cat-input').value,
+        // Add to data
+        data.items.unshift({
+            name: name,
+            points: pointsToAdd,
+            pickup: needsPickup,
             date: new Date().toLocaleDateString()
-        };
+        });
+        data.points += pointsToAdd;
 
-        omniaDB.logs.unshift(newEntry);
-        omniaDB.points += 150;
-        localStorage.setItem('omnia_v3', JSON.stringify(omniaDB));
+        // Save and Update UI
+        localStorage.setItem('ecocycle_simple', JSON.stringify(data));
+        updateUI();
         
-        document.getElementById('item-input').value = "";
-        refreshUI();
-        alert("Encrypted log added to Nexus.");
+        // Reset Form
+        document.getElementById('item-name').value = "";
+        document.getElementById('pickup-toggle').checked = false;
+        alert("Success! Points added.");
     }
 
-    function refreshUI() {
-        document.getElementById('points-val').innerText = omniaDB.points;
-        document.getElementById('your-rank-val').innerText = omniaDB.points + " Cr";
+    function updateUI() {
+        document.getElementById('total-points').innerText = data.points;
         
-        const history = document.getElementById('history-list');
-        history.innerHTML = omniaDB.logs.map(l => `
-            <div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between;">
-                <span><b>${l.item}</b> (${l.cat})</span>
-                <span style="opacity:0.5">${l.date}</span>
+        const list = document.getElementById('activity-list');
+        if (data.items.length === 0) {
+            list.innerHTML = `<p style="font-size: 13px; color: #94a3b8;">No entries yet.</p>`;
+            return;
+        }
+
+        list.innerHTML = data.items.slice(0, 5).map(i => `
+            <div class="history-item">
+                <span><strong>${i.name}</strong><br><small>${i.date}</small></span>
+                <span class="status-badge">${i.pickup ? 'Pickup' : 'Drop-off'}</span>
             </div>
-        `).join('') || "No logs found.";
-
-        // Simple Rank Logic
-        const rank = document.getElementById('user-rank');
-        if(omniaDB.points > 1000) rank.innerText = "Eco-Master";
-        else if(omniaDB.points > 500) rank.innerText = "Pro Recycler";
+        `).join('');
     }
+
+    function clearData() {
+        if(confirm("Delete all history?")) {
+            data = { items: [], points: 0 };
+            localStorage.setItem('ecocycle_simple', JSON.stringify(data));
+            updateUI();
+        }
+    }
+
+    // Initial load
+    updateUI();
 </script>
 </body>
 </html>
