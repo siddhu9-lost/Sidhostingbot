@@ -1,0 +1,12 @@
+{
+  "name": "e-waste-locator",
+  "version": "1.0.0",
+  "description": "E-waste facility locator for Railway",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
