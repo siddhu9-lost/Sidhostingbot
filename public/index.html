@@ -3,329 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCycle Glass | E-Waste & Rewards</title>
+    <title>EcoCycle Omnia | The Future of Recycling</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 
         :root {
             --primary: #00ffa3;
-            --secondary: #3b82f6;
-            --glass: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text: #ffffff;
+            --accent: #bc13fe;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-heavy: rgba(15, 23, 42, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            margin: 0;
-            color: var(--text);
-            min-height: 100vh;
-            /* Animated Background */
-            background: linear-gradient(-45deg, #0f172a, #1e293b, #064e3b, #111827);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
+            font-family: 'Outfit', sans-serif;
+            margin: 0; color: white; min-height: 100vh;
+            background: #020617;
+            background-image: radial-gradient(at 0% 0%, rgba(0, 255, 163, 0.15) 0, transparent 50%), 
+                              radial-gradient(at 100% 100%, rgba(188, 19, 254, 0.15) 0, transparent 50%);
             overflow-x: hidden;
         }
 
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; }
+        
+        /* Navbar & Ticker */
+        nav { padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid var(--border); }
+        .ticker-wrap { background: var(--primary); color: black; padding: 5px 0; font-size: 12px; font-weight: 800; overflow: hidden; }
+        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Glassmorphism Effect */
-        .glass {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 20px; }
+        .grid-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 25px; }
 
-        nav {
-            padding: 1.2rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.7);
-            border-bottom: 1px solid var(--glass-border);
-        }
+        /* Navigation Sidebar */
+        .nav-card { padding: 20px; position: sticky; top: 100px; }
+        .nav-link { width: 100%; padding: 15px; margin-bottom: 8px; border-radius: 15px; border: none; background: transparent; color: rgba(255,255,255,0.6); text-align: left; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.3s; font-size: 15px; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.05); color: var(--primary); box-shadow: inset 0 0 10px rgba(0,255,163,0.1); }
+        .nav-link i { font-size: 18px; }
 
-        .logo { font-size: 1.6rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        /* Main Content */
+        .card { padding: 30px; margin-bottom: 25px; transition: 0.3s; }
+        #map { height: 450px; border-radius: 20px; border: 1px solid var(--border); filter: grayscale(0.5) contrast(1.2); }
 
-        .container { max-width: 1200px; margin: 2rem auto; padding: 0 20px; }
+        /* Leaderboard */
+        .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
+        .rank-number { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
 
-        .card { padding: 25px; margin-bottom: 24px; transition: transform 0.3s ease; }
-        .card:hover { transform: translateY(-5px); }
-
-        .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
-
-        #map { height: 450px; border-radius: 15px; margin-top: 15px; border: 1px solid var(--glass-border); }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            color: white;
-            outline: none;
-        }
-
-        input::placeholder { color: rgba(255, 255, 255, 0.5); }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--primary);
-            color: #000;
-        }
-
-        .btn:hover { box-shadow: 0 0 20px rgba(0, 255, 163, 0.4); transform: scale(1.02); }
-
-        .points-badge {
-            background: rgba(0, 255, 163, 0.15);
-            color: var(--primary);
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--primary);
-            font-weight: 800;
-        }
-
-        .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; }
-        .badge-open { background: #ef4444; color: white; }
-        .badge-solved { background: var(--primary); color: #000; }
+        /* Form Elements */
+        input, select { width: 100%; padding: 14px; margin: 10px 0; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: white; outline: none; }
+        .action-btn { background: var(--primary); color: black; border: none; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; text-transform: uppercase; letter-spacing: 1px; }
+        .action-btn:hover { filter: brightness(1.2); transform: scale(1.01); }
 
         .hidden { display: none; }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
-
-        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        
+        @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } .nav-card { position: static; } }
     </style>
 </head>
 <body>
 
-<nav class="glass">
-    <div class="logo"><i class="fas fa-atom"></i> ECOCYCLE</div>
-    <div id="nav-right" class="hidden">
-        <span id="user-points" class="points-badge"><i class="fas fa-bolt"></i> 0 Credits</span>
+<div class="ticker-wrap">
+    <div class="ticker-move">
+        GLOBAL UPDATE: 1.2M TONS OF E-WASTE RECYCLED THIS MONTH • NEW PICKUP CENTER OPENED IN SECTOR 7 • EARN DOUBLE CREDITS FOR LITHIUM BATTERIES THIS WEEK • 
+    </div>
+</div>
+
+<nav>
+    <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); letter-spacing: -1px;"><i class="fas fa-leaf"></i> OMNIA</div>
+    <div id="nav-info" class="hidden" style="display:flex; gap:20px; align-items: center;">
+        <div class="glass" style="padding: 10px 20px; border-radius: 15px;">
+            <i class="fas fa-shield-virus" style="color: var(--accent);"></i> <span id="user-rank">Novice Recycler</span>
+        </div>
+        <div class="glass" style="padding: 10px 20px; border-radius: 15px; border-color: var(--primary);">
+            <i class="fas fa-bolt" style="color: var(--primary);"></i> <span id="points-val">0</span> Credits
+        </div>
     </div>
 </nav>
 
 <div class="container">
-    <!-- VIEW: LOGIN -->
-    <div id="login-view" class="card glass" style="max-width: 400px; margin: 80px auto; text-align: center;">
-        <h2 style="margin-bottom: 25px;">Neural Access</h2>
-        <input type="text" id="username" placeholder="Full Name">
-        <select id="role">
-            <option value="user">Individual Agent</option>
-            <option value="admin">Central Authority</option>
+    <!-- AUTHENTICATION -->
+    <div id="auth-view" class="glass card" style="max-width: 450px; margin: 60px auto; text-align: center;">
+        <h1 style="margin-top:0">Welcome to Omnia</h1>
+        <p style="opacity: 0.6;">The decentralized e-waste recovery network.</p>
+        <input type="text" id="username" placeholder="Protocol Username">
+        <select id="user-type">
+            <option value="user">Eco-Citizen</option>
+            <option value="admin">System Admin</option>
         </select>
-        <button class="btn" style="width:100%; justify-content: center; margin-top: 20px;" onclick="handleLogin()">Initialize</button>
+        <button class="action-btn" onclick="initApp()">Initialize Protocol</button>
     </div>
 
-    <!-- VIEW: USER DASHBOARD -->
-    <div id="user-view" class="hidden">
-        <div class="grid-2">
-            <div class="card glass">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                    <h3><i class="fas fa-satellite-dish"></i> Facility Radar</h3>
-                    <input type="text" id="mapSearch" placeholder="Filter Area..." style="width: 180px; margin: 0;" onkeyup="filterMap()">
+    <!-- MAIN APP INTERFACE -->
+    <div id="app-view" class="hidden">
+        <div class="grid-layout">
+            <!-- SIDEBAR NAV -->
+            <div class="sidebar">
+                <div class="glass nav-card">
+                    <button class="nav-link active" onclick="showTab('tab-map')"><i class="fas fa-map"></i> Deployment Map</button>
+                    <button class="nav-link" onclick="showTab('tab-wiki')"><i class="fas fa-book-open"></i> Recycle Wiki</button>
+                    <button class="nav-link" onclick="showTab('tab-market')"><i class="fas fa-shopping-bag"></i> Nexus Store</button>
+                    <button class="nav-link" onclick="showTab('tab-history')"><i class="fas fa-history"></i> Log History</button>
+                    <hr style="border:0; border-top:1px solid var(--border); margin: 15px 0;">
+                    <div style="padding: 10px;">
+                        <small style="opacity:0.5">V3.5.0 STABLE</small>
+                    </div>
                 </div>
-                <div id="map"></div>
             </div>
-            
-            <div class="card glass">
-                <h3><i class="fas fa-upload"></i> Log E-Waste</h3>
-                <input type="file" id="imageInput" accept="image/*" onchange="handleImagePreview()">
-                <div id="previewContainer" style="position: relative;">
-                    <img id="imgPreview" style="width:100%; height:160px; object-fit:cover; display:none; border-radius:15px; margin:15px 0;">
+
+            <!-- CENTER WORKSPACE -->
+            <div class="workspace">
+                <!-- TAB: MAP -->
+                <div id="tab-map" class="tab-pane">
+                    <div class="glass card">
+                        <div id="map"></div>
+                    </div>
+                    <div class="glass card">
+                        <h3><i class="fas fa-plus-circle"></i> Log New Material</h3>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <input type="text" id="item-input" placeholder="Device Name">
+                            <select id="cat-input">
+                                <option>Smartphones</option><option>Hardware</option><option>Batteries</option><option>Appliances</option>
+                            </select>
+                        </div>
+                        <input type="file" id="img-input" style="font-size: 12px;">
+                        <button class="action-btn" onclick="pushLog()">Log to Blockchain</button>
+                    </div>
                 </div>
-                <input type="text" id="itemName" placeholder="Device (e.g. iPhone, TV)" onkeyup="suggestCategory(this.value)">
-                <select id="category">
-                    <option value="General">Select Category</option>
-                    <option value="Consumer Electronics">Consumer Electronics</option>
-                    <option value="IT/Telecom">IT & Telecom</option>
-                    <option value="Appliances">Large Appliances</option>
-                </select>
-                <button class="btn" style="width:100%" onclick="submitReport()"><i class="fas fa-plus-circle"></i> Submit Report</button>
+
+                <!-- TAB: WIKI -->
+                <div id="tab-wiki" class="tab-pane hidden">
+                    <div class="glass card">
+                        <h2>Recycling Encyclopedia</h2>
+                        <div style="display:grid; gap:20px;">
+                            <div class="glass" style="padding:15px;">
+                                <h4 style="color:var(--primary)">Lithium-Ion Batteries</h4>
+                                <p style="font-size:14px; opacity:0.7;">Extremely hazardous. Must be taped at terminals and never thrown in regular bins. Contains Cobalt and Lithium.</p>
+                            </div>
+                            <div class="glass" style="padding:15px;">
+                                <h4 style="color:var(--primary)">CRT Monitors</h4>
+                                <p style="font-size:14px; opacity:0.7;">Contain up to 4kg of lead. Require specialized high-heat processing to recover glass safely.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: HISTORY -->
+                <div id="tab-history" class="tab-pane hidden">
+                    <div class="glass card">
+                        <h2>Personal Transmission Logs</h2>
+                        <div id="history-list"></div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="card glass">
-            <h3><i class="fas fa-list-ul"></i> Transmission Logs</h3>
-            <input type="text" id="ticketSearch" placeholder="Search my reports..." style="margin-bottom: 20px;" onkeyup="renderUserTickets()">
-            <div id="userTicketList"></div>
-        </div>
-    </div>
+            <!-- RIGHT INFO PANEL -->
+            <div class="info-panel">
+                <div class="glass card" style="border-color: var(--accent);">
+                    <h4><i class="fas fa-trophy" style="color:var(--primary)"></i> Leaderboard</h4>
+                    <div id="leaderboard-box">
+                        <div class="rank-item"><span>1. Sarah J.</span><b>4,200 Cr</b></div>
+                        <div class="rank-item"><span>2. Mark Tech</span><b>3,850 Cr</b></div>
+                        <div class="rank-item"><span>3. You</span><b id="your-rank-val">0 Cr</b></div>
+                    </div>
+                </div>
 
-    <!-- VIEW: ADMIN DASHBOARD -->
-    <div id="admin-view" class="hidden">
-        <div class="grid-2" style="grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
-            <div class="card glass"><small>Pending</small><h2 id="stat-pending">0</h2></div>
-            <div class="card glass"><small>Recycled</small><h2 id="stat-solved" style="color: var(--primary);">0</h2></div>
-            <div class="card glass"><small>Total Credits</small><h2 id="stat-credits" style="color: #3b82f6;">0</h2></div>
-        </div>
-        
-        <div class="card glass" style="overflow-x: auto;">
-            <h3>Central Management Console</h3>
-            <table width="100%" style="border-collapse: collapse; margin-top: 15px;">
-                <thead>
-                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
-                        <th style="padding: 15px;">Agent</th>
-                        <th>Device</th>
-                        <th>Status</th>
-                        <th>GPS</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="adminListBody"></tbody>
-            </table>
+                <div class="glass card">
+                    <h4>Impact Stats</h4>
+                    <div style="text-align:center; padding: 10px;">
+                        <h2 style="margin:0; color:var(--primary);">45.2 kg</h2>
+                        <p style="font-size:12px; opacity:0.5;">CO2 Offset Contribution</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let db = JSON.parse(localStorage.getItem('ecocycle_glass_db')) || { tickets: [], users: {} };
-    function saveDB() { localStorage.setItem('ecocycle_glass_db', JSON.stringify(db)); }
+    let omniaDB = JSON.parse(localStorage.getItem('omnia_v3')) || { logs: [], points: 0 };
+    let user = "";
 
-    let session = { user: '', role: '', coords: [20.5937, 78.9629] };
-    const map = L.map('map', { zoomControl: false }).setView(session.coords, 5);
+    const map = L.map('map', { zoomControl: false }).setView([19.076, 72.877], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    function handleLogin() {
-        session.user = document.getElementById('username').value || 'Guest';
-        session.role = document.getElementById('role').value;
-        if (!db.users[session.user]) db.users[session.user] = { points: 0 };
-        
-        document.getElementById('login-view').classList.add('hidden');
-        document.getElementById('nav-right').classList.remove('hidden');
-        updatePointsDisplay();
-
-        if (session.role === 'user') {
-            document.getElementById('user-view').classList.remove('hidden');
-            renderUserTickets();
-            navigator.geolocation.getCurrentPosition(p => {
-                session.coords = [p.coords.latitude, p.coords.longitude];
-                map.setView(session.coords, 13);
-                L.circle(session.coords, {radius: 500, color: '#00ffa3', fillOpacity: 0.2}).addTo(map);
-            });
-        } else {
-            document.getElementById('admin-view').classList.remove('hidden');
-            renderAdminView();
-        }
+    function initApp() {
+        user = document.getElementById('username').value || "Agent_Null";
+        document.getElementById('auth-view').classList.add('hidden');
+        document.getElementById('app-view').classList.remove('hidden');
+        document.getElementById('nav-info').classList.remove('hidden');
+        refreshUI();
         setTimeout(() => map.invalidateSize(), 400);
     }
 
-    // AI CATEGORY SUGGESTION (NEW)
-    function suggestCategory(val) {
-        const cat = document.getElementById('category');
-        val = val.toLowerCase();
-        if (val.match(/phone|laptop|mouse|tablet/)) cat.value = "IT/Telecom";
-        else if (val.match(/fridge|ac|oven|wash/)) cat.value = "Appliances";
-        else if (val.match(/tv|camera|speaker/)) cat.value = "Consumer Electronics";
+    function showTab(id) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
     }
 
-    function handleImagePreview() {
-        const file = document.getElementById('imageInput').files[0];
-        const reader = new FileReader();
-        reader.onload = e => {
-            const preview = document.getElementById('imgPreview');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        }
-        reader.readAsDataURL(file);
-    }
+    function pushLog() {
+        const item = document.getElementById('item-input').value;
+        if(!item) return;
 
-    function submitReport() {
-        const item = document.getElementById('itemName').value;
-        if(!item) return alert("Describe the device");
-
-        const ticket = {
-            id: 'TX-' + Date.now().toString(16),
-            user: session.user,
+        const newEntry = {
+            id: Date.now(),
             item,
-            category: document.getElementById('category').value,
-            coords: session.coords,
-            status: 'Open',
-            img: document.getElementById('imgPreview').src || ''
+            cat: document.getElementById('cat-input').value,
+            date: new Date().toLocaleDateString()
         };
 
-        db.tickets.push(ticket);
-        saveDB();
-        renderUserTickets();
-        alert("Transmission Success! +50 Credits Pending Approval.");
-    }
-
-    function renderUserTickets() {
-        const query = document.getElementById('ticketSearch').value.toLowerCase();
-        const list = document.getElementById('userTicketList');
-        const tasks = db.tickets.filter(t => t.user === session.user && t.item.toLowerCase().includes(query));
+        omniaDB.logs.unshift(newEntry);
+        omniaDB.points += 150;
+        localStorage.setItem('omnia_v3', JSON.stringify(omniaDB));
         
-        list.innerHTML = tasks.map(t => `
-            <div class="glass" style="display:flex; align-items:center; justify-content:space-between; padding:15px; margin-bottom:10px; border-radius:12px;">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <img src="${t.img}" style="width:45px; height:45px; border-radius:8px; object-fit:cover;">
-                    <div><strong>${t.item}</strong><br><small style="opacity:0.6">${t.category}</small></div>
-                </div>
-                <span class="badge ${t.status === 'Open' ? 'badge-open' : 'badge-solved'}">${t.status}</span>
+        document.getElementById('item-input').value = "";
+        refreshUI();
+        alert("Encrypted log added to Nexus.");
+    }
+
+    function refreshUI() {
+        document.getElementById('points-val').innerText = omniaDB.points;
+        document.getElementById('your-rank-val').innerText = omniaDB.points + " Cr";
+        
+        const history = document.getElementById('history-list');
+        history.innerHTML = omniaDB.logs.map(l => `
+            <div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between;">
+                <span><b>${l.item}</b> (${l.cat})</span>
+                <span style="opacity:0.5">${l.date}</span>
             </div>
-        `).join('');
-    }
+        `).join('') || "No logs found.";
 
-    function renderAdminView() {
-        document.getElementById('stat-pending').innerText = db.tickets.filter(t => t.status === 'Open').length;
-        document.getElementById('stat-solved').innerText = db.tickets.filter(t => t.status === 'Solved').length;
-        document.getElementById('stat-credits').innerText = Object.values(db.users).reduce((a, b) => a + b.points, 0);
-
-        const body = document.getElementById('adminListBody');
-        body.innerHTML = db.tickets.map(t => `
-            <tr style="border-bottom: 1px solid var(--glass-border);">
-                <td style="padding:15px;">${t.user}</td>
-                <td>${t.item}</td>
-                <td><span class="badge ${t.status === 'Open' ? 'badge-open' : 'badge-solved'}">${t.status}</span></td>
-                <td><a href="https://maps.google.com?q=${t.coords[0]},${t.coords[1]}" target="_blank" style="color:var(--primary);"><i class="fas fa-location-arrow"></i></a></td>
-                <td>
-                    ${t.status === 'Open' ? `<button class="btn" style="padding:5px 10px; font-size:10px;" onclick="resolveTicket('${t.id}')">Approve</button>` : '✅'}
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    function resolveTicket(id) {
-        const t = db.tickets.find(x => x.id === id);
-        if(t) {
-            t.status = 'Solved';
-            db.users[t.user].points += 50;
-            saveDB();
-            renderAdminView();
-        }
-    }
-
-    function updatePointsDisplay() {
-        if(db.users[session.user]) {
-            document.getElementById('user-points').innerHTML = `<i class="fas fa-bolt"></i> ${db.users[session.user].points} Credits`;
-        }
+        // Simple Rank Logic
+        const rank = document.getElementById('user-rank');
+        if(omniaDB.points > 1000) rank.innerText = "Eco-Master";
+        else if(omniaDB.points > 500) rank.innerText = "Pro Recycler";
     }
 </script>
 </body>
 </html>
-   
