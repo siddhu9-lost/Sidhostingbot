@@ -3,67 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCycle | Modern E-Waste Utility</title>
+    <title>EcoCycle | Premium E-Waste Recovery</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Using Google Maps API (Note: Requires API Key for production) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <nav>
-    <div class="logo"><i class="fas fa-seedling"></i> EcoCycle</div>
-    <div style="font-weight: 600; color: var(--text-muted);">
-        <i class="far fa-user-circle"></i> Digital Agent
-    </div>
+    <div class="logo"><i class="fas fa-bolt"></i> EcoCycle</div>
+    <div style="font-weight: 600;"><i class="fas fa-circle" style="color: #00ff00; font-size: 8px;"></i> Live Network</div>
 </nav>
 
 <div class="container">
     <main>
-        <!-- Map Section -->
         <div class="box">
-            <h3><i class="fas fa-map-marked-alt" style="color: #3b82f6;"></i> Drop-off Network</h3>
+            <h3><i class="fas fa-map-pin" style="color: var(--primary);"></i> 1. Pick Location</h3>
+            <p style="font-size: 0.8rem; opacity: 0.7;">Click on the map to set your pickup/drop-off point.</p>
             <div id="map"></div>
+            <p id="loc-status" style="margin-top: 10px; font-size: 0.9rem; color: var(--primary);">
+                <i class="fas fa-location-arrow"></i> Using Default Center
+            </p>
         </div>
 
-        <!-- Logging Section -->
         <div class="box">
-            <h3><i class="fas fa-pen-fancy" style="color: var(--primary);"></i> Log Disposal</h3>
+            <h3><i class="fas fa-camera" style="color: var(--primary);"></i> 2. Item Details</h3>
             
-            <label>Device Details</label>
-            <input type="text" id="item-name" placeholder="What are you recycling?">
+            <label>Upload Device Photo</label>
+            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)">
+            <img id="preview" class="img-preview">
+
+            <label style="display:block; margin-top:15px;">Device Name</label>
+            <input type="text" id="item-name" placeholder="e.g. Broken iPhone 12">
             
-            <label>Impact Category</label>
+            <label style="display:block; margin-top:15px;">Impact Category</label>
             <select id="item-cat">
-                <option value="100">Small Tech (Phones, Mice) - 100pt</option>
-                <option value="500">Major Goods (TV, Fridge) - 500pt</option>
-                <option value="50">Essentials (Cables, Cells) - 50pt</option>
+                <option value="100">Small Electronics (100 pts)</option>
+                <option value="500">Major Appliances (500 pts)</option>
+                <option value="50">Cables & Accessories (50 pts)</option>
             </select>
 
-            <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" id="pickup-toggle" style="width: auto; margin: 0;"> 
-                <span style="font-size: 0.9rem; font-weight: 500;">Request doorstep collection?</span>
-            </div>
-
-            <button class="btn" onclick="addEntry()">Complete Transaction</button>
+            <button class="btn" onclick="addEntry()">Finalize Log</button>
         </div>
     </main>
 
-    <aside class="sidebar">
-        <!-- Dashboard Score -->
+    <aside>
         <div class="box stat-card">
-            <p>Your Eco-Contribution</p>
+            <p>Your Total Impact</p>
             <div class="points" id="total-points">0</div>
-            <small>Credits Available</small>
+            <small style="text-transform: uppercase; letter-spacing: 2px;">Green Credits</small>
         </div>
 
-        <!-- Activity Feed -->
         <div class="box">
-            <h4 style="margin-top:0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Recent Activity</h4>
-            <div id="activity-list">
-                <!-- Data injected here -->
-            </div>
-            <button onclick="clearData()" style="background:none; border:none; color: #ef4444; cursor:pointer; font-size: 0.8rem; margin-top: 15px; font-weight: 600;">
-                <i class="fas fa-trash-alt"></i> Wipe Records
+            <h4 style="margin-top:0;">Recent Logs</h4>
+            <div id="activity-list"></div>
+            <button onclick="clearData()" style="background:none; border:none; color: #ff4d4d; cursor:pointer; font-size: 0.8rem; margin-top: 15px; width:100%; text-align:center;">
+                <i class="fas fa-undo"></i> Clear All Data
             </button>
         </div>
     </aside>
@@ -71,34 +68,65 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let data = JSON.parse(localStorage.getItem('ecocycle_attractive')) || { items: [], points: 0 };
+    let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
+    let selectedCoords = [19.076, 72.877];
+    let capturedImage = "";
 
-    const map = L.map('map', { zoomControl: false }).setView([19.076, 72.877], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    // Initialize Map
+    const map = L.map('map', { zoomControl: false }).setView(selectedCoords, 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    const centers = [
-        {name: "Green Hub Central", pos: [19.076, 72.877]},
-        {name: "North Recycle Post", pos: [19.150, 72.930]},
-        {name: "West Tech Salvage", pos: [19.050, 72.830]}
-    ];
-    centers.forEach(c => L.marker(c.pos).addTo(map).bindPopup(`<b>${c.name}</b><br>Accepting E-Waste Now`));
+    let marker = L.marker(selectedCoords, {draggable: true}).addTo(map);
+
+    // Map Click Functionality
+    map.on('click', function(e) {
+        selectedCoords = [e.latlng.lat, e.latlng.lng];
+        marker.setLatLng(e.latlng);
+        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Location Pinned: ${selectedCoords[0].toFixed(3)}, ${selectedCoords[1].toFixed(3)}`;
+    });
+
+    // Image Preview
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            capturedImage = reader.result;
+            const preview = document.getElementById('preview');
+            preview.src = capturedImage;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
 
     function addEntry() {
         const name = document.getElementById('item-name').value;
         const pts = parseInt(document.getElementById('item-cat').value);
-        const pickup = document.getElementById('pickup-toggle').checked;
 
-        if (!name) {
-            alert("Please identify the item.");
+        if (!name || !capturedImage) {
+            alert("Please upload a photo and enter item name.");
             return;
         }
 
-        data.items.unshift({ name, points: pts, pickup, date: new Date().toLocaleDateString() });
+        const entry = {
+            name,
+            points: pts,
+            image: capturedImage,
+            coords: selectedCoords,
+            date: new Date().toLocaleDateString()
+        };
+
+        data.items.unshift(entry);
         data.points += pts;
-        localStorage.setItem('ecocycle_attractive', JSON.stringify(data));
+        localStorage.setItem('ecocycle_v4', JSON.stringify(data));
         
         updateUI();
+        resetForm();
+    }
+
+    function resetForm() {
         document.getElementById('item-name').value = "";
+        document.getElementById('file-input').value = "";
+        document.getElementById('preview').style.display = 'none';
+        capturedImage = "";
     }
 
     function updateUI() {
@@ -106,25 +134,26 @@
         const list = document.getElementById('activity-list');
         
         if (data.items.length === 0) {
-            list.innerHTML = `<p style="color:#94a3b8; font-size:0.9rem; text-align:center;">No recent logs found.</p>`;
+            list.innerHTML = `<p style="text-align:center; opacity:0.5;">No entries yet.</p>`;
             return;
         }
 
         list.innerHTML = data.items.slice(0, 4).map(i => `
             <div class="history-item">
-                <div>
-                    <div style="font-weight:700; font-size:0.9rem;">${i.name}</div>
-                    <div style="font-size:0.75rem; color:#64748b;">${i.date}</div>
+                <img src="${i.image}" class="thumb">
+                <div style="flex:1">
+                    <div style="font-weight:700;">${i.name}</div>
+                    <div style="font-size:0.7rem; opacity:0.6;">${i.date} • ${i.points} pts</div>
                 </div>
-                <span class="status-badge">${i.pickup ? 'Pickup' : 'Drop'}</span>
+                <i class="fas fa-map-marker-alt" style="color:var(--primary); font-size: 0.8rem;" title="${i.coords}"></i>
             </div>
         `).join('');
     }
 
     function clearData() {
-        if(confirm("Confirm deletion of all eco-records?")) {
+        if(confirm("Wipe all data?")) {
             data = { items: [], points: 0 };
-            localStorage.setItem('ecocycle_attractive', JSON.stringify(data));
+            localStorage.setItem('ecocycle_v4', JSON.stringify(data));
             updateUI();
         }
     }
