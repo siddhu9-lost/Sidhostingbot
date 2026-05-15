@@ -3,138 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCycle Ultimate | E-Waste & Rewards</title>
+    <title>EcoCycle Glass | E-Waste & Rewards</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #00c853; --dark: #0f172a; --accent: #3b82f6; --gold: #f59e0b; --shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        body { font-family: 'Inter', sans-serif; margin: 0; background: #f8fafc; color: #1e293b; }
-        
-        /* Layout Components */
-        nav { background: var(--dark); color: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-        .logo { font-size: 1.4rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+
+        :root {
+            --primary: #00ffa3;
+            --secondary: #3b82f6;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text: #ffffff;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            color: var(--text);
+            min-height: 100vh;
+            /* Animated Background */
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #064e3b, #111827);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Effect */
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        nav {
+            padding: 1.2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.7);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo { font-size: 1.6rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+
         .container { max-width: 1200px; margin: 2rem auto; padding: 0 20px; }
-        
-        /* Dashboard Cards */
-        .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); border: 1px solid #f1f5f9; }
+
+        .card { padding: 25px; margin-bottom: 24px; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); }
+
         .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
-        
-        /* Map Customization */
-        #map { height: 500px; border-radius: 12px; margin-top: 15px; }
-        
-        /* Reward Points Section */
-        .points-badge { background: #ecfdf5; color: var(--primary); padding: 8px 16px; border-radius: 99px; font-weight: 700; border: 1px solid var(--primary); }
-        
-        /* Buttons & Interactions */
-        .btn { padding: 12px 24px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #059669; transform: translateY(-2px); }
-        .btn-outline { background: transparent; border: 2px solid #e2e8f0; }
 
-        /* Status Styling */
-        .badge { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-        .badge-open { background: #fee2e2; color: #dc2626; }
-        .badge-solved { background: #dcfce7; color: #16a34a; }
+        #map { height: 450px; border-radius: 15px; margin-top: 15px; border: 1px solid var(--glass-border); }
 
-        /* Utility */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        input::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary);
+            color: #000;
+        }
+
+        .btn:hover { box-shadow: 0 0 20px rgba(0, 255, 163, 0.4); transform: scale(1.02); }
+
+        .points-badge {
+            background: rgba(0, 255, 163, 0.15);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--primary);
+            font-weight: 800;
+        }
+
+        .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        .badge-open { background: #ef4444; color: white; }
+        .badge-solved { background: var(--primary); color: #000; }
+
         .hidden { display: none; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,200,83,0.1); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
 
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<nav>
-    <div class="logo"><i class="fas fa-recycle"></i> ECOCYCLE</div>
+<nav class="glass">
+    <div class="logo"><i class="fas fa-atom"></i> ECOCYCLE</div>
     <div id="nav-right" class="hidden">
-        <span id="user-points" class="points-badge"><i class="fas fa-coins"></i> 0 Credits</span>
+        <span id="user-points" class="points-badge"><i class="fas fa-bolt"></i> 0 Credits</span>
     </div>
 </nav>
 
 <div class="container">
     <!-- VIEW: LOGIN -->
-    <div id="login-view" class="card" style="max-width: 450px; margin: 100px auto;">
-        <h2 style="text-align: center;">Smart Recovery Portal</h2>
+    <div id="login-view" class="card glass" style="max-width: 400px; margin: 80px auto; text-align: center;">
+        <h2 style="margin-bottom: 25px;">Neural Access</h2>
         <input type="text" id="username" placeholder="Full Name">
         <select id="role">
-            <option value="user">Individual User</option>
-            <option value="admin">Municipal Authority</option>
+            <option value="user">Individual Agent</option>
+            <option value="admin">Central Authority</option>
         </select>
-        <button class="btn btn-primary" style="width:100%; justify-content: center;" onclick="handleLogin()">Get Started</button>
+        <button class="btn" style="width:100%; justify-content: center; margin-top: 20px;" onclick="handleLogin()">Initialize</button>
     </div>
 
     <!-- VIEW: USER DASHBOARD -->
     <div id="user-view" class="hidden">
         <div class="grid-2">
-            <div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3><i class="fas fa-map-marked-alt"></i> Facility Navigator</h3>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="mapSearch" placeholder="Search facilities..." style="width:200px; margin:0; padding:8px;" onkeyup="filterMap()">
-                        </div>
-                    </div>
-                    <div id="map"></div>
+            <div class="card glass">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                    <h3><i class="fas fa-satellite-dish"></i> Facility Radar</h3>
+                    <input type="text" id="mapSearch" placeholder="Filter Area..." style="width: 180px; margin: 0;" onkeyup="filterMap()">
                 </div>
+                <div id="map"></div>
             </div>
             
-            <div>
-                <div class="card">
-                    <h3><i class="fas fa-camera"></i> Report Disposal</h3>
-                    <input type="file" id="imageInput" accept="image/*" onchange="handleImagePreview()">
-                    <img id="imgPreview" style="width:100%; height:150px; object-fit:cover; display:none; border-radius:12px; margin:15px 0;">
-                    <input type="text" id="itemName" placeholder="Device Name (e.g. Battery, Laptop)">
-                    <select id="category">
-                        <option value="General">Select Category</option>
-                        <option value="Consumer Electronics">Consumer Electronics</option>
-                        <option value="Large Appliances">Large Appliances</option>
-                        <option value="IT/Telecom">IT & Telecom</option>
-                    </select>
-                    <button class="btn btn-primary" style="width:100%" onclick="submitReport()">Submit & Earn Points</button>
+            <div class="card glass">
+                <h3><i class="fas fa-upload"></i> Log E-Waste</h3>
+                <input type="file" id="imageInput" accept="image/*" onchange="handleImagePreview()">
+                <div id="previewContainer" style="position: relative;">
+                    <img id="imgPreview" style="width:100%; height:160px; object-fit:cover; display:none; border-radius:15px; margin:15px 0;">
                 </div>
-
-                <div class="card" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white;">
-                    <h4><i class="fas fa-trophy" style="color:var(--gold)"></i> Impact Leaderboard</h4>
-                    <p style="font-size: 13px; opacity: 0.8;">You've saved <strong>0.5kg</strong> of CO2 emissions this month!</p>
-                </div>
+                <input type="text" id="itemName" placeholder="Device (e.g. iPhone, TV)" onkeyup="suggestCategory(this.value)">
+                <select id="category">
+                    <option value="General">Select Category</option>
+                    <option value="Consumer Electronics">Consumer Electronics</option>
+                    <option value="IT/Telecom">IT & Telecom</option>
+                    <option value="Appliances">Large Appliances</option>
+                </select>
+                <button class="btn" style="width:100%" onclick="submitReport()"><i class="fas fa-plus-circle"></i> Submit Report</button>
             </div>
         </div>
 
-        <div class="card">
-            <h3><i class="fas fa-stream"></i> Your Live Requests</h3>
+        <div class="card glass">
+            <h3><i class="fas fa-list-ul"></i> Transmission Logs</h3>
+            <input type="text" id="ticketSearch" placeholder="Search my reports..." style="margin-bottom: 20px;" onkeyup="renderUserTickets()">
             <div id="userTicketList"></div>
         </div>
     </div>
 
-    <!-- VIEW: MUNICIPAL DASHBOARD -->
+    <!-- VIEW: ADMIN DASHBOARD -->
     <div id="admin-view" class="hidden">
-        <div class="grid-2" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="card" style="border-left: 5px solid var(--accent);">
-                <small>Pending Pickups</small>
-                <h2 id="stat-pending">0</h2>
-            </div>
-            <div class="card" style="border-left: 5px solid var(--primary);">
-                <small>Successfully Recycled</small>
-                <h2 id="stat-solved">0</h2>
-            </div>
-            <div class="card" style="border-left: 5px solid var(--gold);">
-                <small>Carbon Credits Issued</small>
-                <h2 id="stat-credits">0</h2>
-            </div>
+        <div class="grid-2" style="grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
+            <div class="card glass"><small>Pending</small><h2 id="stat-pending">0</h2></div>
+            <div class="card glass"><small>Recycled</small><h2 id="stat-solved" style="color: var(--primary);">0</h2></div>
+            <div class="card glass"><small>Total Credits</small><h2 id="stat-credits" style="color: #3b82f6;">0</h2></div>
         </div>
         
-        <div class="card">
-            <h3>Incoming Management Console</h3>
-            <table width="100%" id="adminTable">
+        <div class="card glass" style="overflow-x: auto;">
+            <h3>Central Management Console</h3>
+            <table width="100%" style="border-collapse: collapse; margin-top: 15px;">
                 <thead>
-                    <tr style="text-align: left; background: #f8fafc;">
-                        <th style="padding:15px">Reporter</th>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                        <th style="padding: 15px;">Agent</th>
                         <th>Device</th>
-                        <th>Category</th>
-                        <th>GPS Location</th>
                         <th>Status</th>
+                        <th>GPS</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -146,30 +204,16 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- PERSISTENT DATA ENGINE ---
-    let db = JSON.parse(localStorage.getItem('ecocycle_db')) || {
-        tickets: [],
-        users: {}
-    };
-
-    function saveDB() { localStorage.setItem('ecocycle_db', JSON.stringify(db)); }
+    let db = JSON.parse(localStorage.getItem('ecocycle_glass_db')) || { tickets: [], users: {} };
+    function saveDB() { localStorage.setItem('ecocycle_glass_db', JSON.stringify(db)); }
 
     let session = { user: '', role: '', coords: [20.5937, 78.9629] };
-    const map = L.map('map').setView(session.coords, 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    const map = L.map('map', { zoomControl: false }).setView(session.coords, 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    // Mock Facilities
-    const facilities = [
-        { name: "Urban Recyclers HQ", lat: 19.076, lng: 72.877, type: "All-Rounder" },
-        { name: "Green Earth Battery Hub", lat: 28.613, lng: 77.209, type: "Batteries Only" }
-    ];
-    facilities.forEach(f => L.marker([f.lat, f.lng]).addTo(map).bindPopup(`<b>${f.name}</b><br>${f.type}`));
-
-    // --- LOGIC ---
     function handleLogin() {
         session.user = document.getElementById('username').value || 'Guest';
         session.role = document.getElementById('role').value;
-        
         if (!db.users[session.user]) db.users[session.user] = { points: 0 };
         
         document.getElementById('login-view').classList.add('hidden');
@@ -182,13 +226,22 @@
             navigator.geolocation.getCurrentPosition(p => {
                 session.coords = [p.coords.latitude, p.coords.longitude];
                 map.setView(session.coords, 13);
-                L.circle(session.coords, {radius: 400, color: '#00c853'}).addTo(map).bindPopup("Your Location");
+                L.circle(session.coords, {radius: 500, color: '#00ffa3', fillOpacity: 0.2}).addTo(map);
             });
         } else {
             document.getElementById('admin-view').classList.remove('hidden');
             renderAdminView();
         }
         setTimeout(() => map.invalidateSize(), 400);
+    }
+
+    // AI CATEGORY SUGGESTION (NEW)
+    function suggestCategory(val) {
+        const cat = document.getElementById('category');
+        val = val.toLowerCase();
+        if (val.match(/phone|laptop|mouse|tablet/)) cat.value = "IT/Telecom";
+        else if (val.match(/fridge|ac|oven|wash/)) cat.value = "Appliances";
+        else if (val.match(/tv|camera|speaker/)) cat.value = "Consumer Electronics";
     }
 
     function handleImagePreview() {
@@ -204,41 +257,38 @@
 
     function submitReport() {
         const item = document.getElementById('itemName').value;
-        const cat = document.getElementById('category').value;
-        if(!item) return alert("Enter item details");
+        if(!item) return alert("Describe the device");
 
         const ticket = {
-            id: 'TK-' + Date.now(),
+            id: 'TX-' + Date.now().toString(16),
             user: session.user,
             item,
-            category: cat,
+            category: document.getElementById('category').value,
             coords: session.coords,
             status: 'Open',
-            timestamp: new Date().toLocaleString(),
-            img: document.getElementById('imgPreview').src
+            img: document.getElementById('imgPreview').src || ''
         };
 
         db.tickets.push(ticket);
         saveDB();
         renderUserTickets();
-        alert("Report Submitted! Pending 50 Carbon Credits.");
+        alert("Transmission Success! +50 Credits Pending Approval.");
     }
 
     function renderUserTickets() {
+        const query = document.getElementById('ticketSearch').value.toLowerCase();
         const list = document.getElementById('userTicketList');
-        const userTasks = db.tickets.filter(t => t.user === session.user);
-        list.innerHTML = userTasks.length ? userTasks.map(t => `
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:15px; border-bottom:1px solid #eee;">
+        const tasks = db.tickets.filter(t => t.user === session.user && t.item.toLowerCase().includes(query));
+        
+        list.innerHTML = tasks.map(t => `
+            <div class="glass" style="display:flex; align-items:center; justify-content:space-between; padding:15px; margin-bottom:10px; border-radius:12px;">
                 <div style="display:flex; align-items:center; gap:15px;">
-                    <img src="${t.img}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-                    <div>
-                        <strong>${t.item}</strong> <small style="color:#64748b">(${t.category})</small><br>
-                        <small>${t.timestamp}</small>
-                    </div>
+                    <img src="${t.img}" style="width:45px; height:45px; border-radius:8px; object-fit:cover;">
+                    <div><strong>${t.item}</strong><br><small style="opacity:0.6">${t.category}</small></div>
                 </div>
                 <span class="badge ${t.status === 'Open' ? 'badge-open' : 'badge-solved'}">${t.status}</span>
             </div>
-        `).join('') : '<p style="text-align:center; padding:20px; color:#94a3b8;">No history found.</p>';
+        `).join('');
     }
 
     function renderAdminView() {
@@ -248,14 +298,13 @@
 
         const body = document.getElementById('adminListBody');
         body.innerHTML = db.tickets.map(t => `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding:15px"><b>${t.user}</b></td>
+            <tr style="border-bottom: 1px solid var(--glass-border);">
+                <td style="padding:15px;">${t.user}</td>
                 <td>${t.item}</td>
-                <td><small>${t.category}</small></td>
-                <td><a href="https://www.google.com/maps?q=${t.coords[0]},${t.coords[1]}" target="_blank" style="color:var(--accent)"><i class="fas fa-location-arrow"></i> View</a></td>
                 <td><span class="badge ${t.status === 'Open' ? 'badge-open' : 'badge-solved'}">${t.status}</span></td>
+                <td><a href="https://maps.google.com?q=${t.coords[0]},${t.coords[1]}" target="_blank" style="color:var(--primary);"><i class="fas fa-location-arrow"></i></a></td>
                 <td>
-                    ${t.status === 'Open' ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:11px;" onclick="resolveTicket('${t.id}')">Approve & Pay</button>` : '<i class="fas fa-check-circle" style="color:var(--primary)"></i>'}
+                    ${t.status === 'Open' ? `<button class="btn" style="padding:5px 10px; font-size:10px;" onclick="resolveTicket('${t.id}')">Approve</button>` : '✅'}
                 </td>
             </tr>
         `).join('');
@@ -265,7 +314,7 @@
         const t = db.tickets.find(x => x.id === id);
         if(t) {
             t.status = 'Solved';
-            db.users[t.user].points += 50; // Award Credits
+            db.users[t.user].points += 50;
             saveDB();
             renderAdminView();
         }
@@ -273,7 +322,7 @@
 
     function updatePointsDisplay() {
         if(db.users[session.user]) {
-            document.getElementById('user-points').innerHTML = `<i class="fas fa-coins" style="color:var(--gold)"></i> ${db.users[session.user].points} Credits`;
+            document.getElementById('user-points').innerHTML = `<i class="fas fa-bolt"></i> ${db.users[session.user].points} Credits`;
         }
     }
 </script>
