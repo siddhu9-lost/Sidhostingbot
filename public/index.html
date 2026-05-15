@@ -3,179 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCycle Simple</title>
+    <title>EcoCycle | Modern E-Waste Utility</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #22c55e;
-            --bg: #f8fafc;
-            --text: #1e293b;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; background-color: var(--bg); color: var(--text);
-        }
-
-        /* Top Bar */
-        nav {
-            background: white; padding: 15px 5%;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .logo { font-weight: bold; color: var(--primary); font-size: 20px; }
-
-        .container { max-width: 1000px; margin: 20px auto; padding: 20px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-
-        /* Main Components */
-        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        #map { height: 350px; border-radius: 8px; margin-top: 15px; border: 1px solid #e2e8f0; }
-
-        /* Form Elements */
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:hover { background: #16a34a; }
-
-        /* Simple Counter */
-        .stat-card { text-align: center; padding: 15px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; }
-        .points { font-size: 24px; font-weight: bold; color: var(--primary); }
-
-        /* History List */
-        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .status-badge { background: #e2e8f0; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-
-        @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
-    </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo"><i class="fas fa-recycle"></i> EcoCycle</div>
-    <div id="user-display" style="font-weight: 500;">Welcome, Guest</div>
+    <div class="logo"><i class="fas fa-seedling"></i> EcoCycle</div>
+    <div style="font-weight: 600; color: var(--text-muted);">
+        <i class="far fa-user-circle"></i> Digital Agent
+    </div>
 </nav>
 
 <div class="container">
-    <!-- LEFT COLUMN -->
-    <div class="main-content">
-        <!-- STEP 1: DROP OFF LOCATIONS -->
+    <main>
+        <!-- Map Section -->
         <div class="box">
-            <h3 style="margin-top:0"><i class="fas fa-map-marker-alt"></i> Find Nearby Drop-off</h3>
-            <p style="font-size: 14px; color: #64748b;">Click the markers on the map to see center hours.</p>
+            <h3><i class="fas fa-map-marked-alt" style="color: #3b82f6;"></i> Drop-off Network</h3>
             <div id="map"></div>
         </div>
 
-        <!-- STEP 2: LOG ITEM -->
+        <!-- Logging Section -->
         <div class="box">
-            <h3><i class="fas fa-plus"></i> New Disposal Entry</h3>
-            <label>What are you recycling?</label>
-            <input type="text" id="item-name" placeholder="e.g. Old Laptop, Phone Charger">
+            <h3><i class="fas fa-pen-fancy" style="color: var(--primary);"></i> Log Disposal</h3>
             
-            <label>Category</label>
+            <label>Device Details</label>
+            <input type="text" id="item-name" placeholder="What are you recycling?">
+            
+            <label>Impact Category</label>
             <select id="item-cat">
-                <option value="100">Small Electronics (100 pts)</option>
-                <option value="500">Large Appliances (500 pts)</option>
-                <option value="50">Batteries/Cables (50 pts)</option>
+                <option value="100">Small Tech (Phones, Mice) - 100pt</option>
+                <option value="500">Major Goods (TV, Fridge) - 500pt</option>
+                <option value="50">Essentials (Cables, Cells) - 50pt</option>
             </select>
 
-            <div style="margin: 15px 0;">
-                <input type="checkbox" id="pickup-toggle" style="width:auto"> 
-                <label for="pickup-toggle" style="font-size:14px">Request Home Pickup?</label>
+            <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="pickup-toggle" style="width: auto; margin: 0;"> 
+                <span style="font-size: 0.9rem; font-weight: 500;">Request doorstep collection?</span>
             </div>
 
-            <button class="btn" onclick="addEntry()">Submit Entry</button>
+            <button class="btn" onclick="addEntry()">Complete Transaction</button>
         </div>
-    </div>
+    </main>
 
-    <!-- RIGHT COLUMN -->
-    <div class="sidebar">
-        <!-- POINTS BOX -->
+    <aside class="sidebar">
+        <!-- Dashboard Score -->
         <div class="box stat-card">
-            <p style="margin:0; color: #64748b; font-size: 14px;">Total Credits Earned</p>
+            <p>Your Eco-Contribution</p>
             <div class="points" id="total-points">0</div>
+            <small>Credits Available</small>
         </div>
 
-        <!-- RECENT ACTIVITY -->
+        <!-- Activity Feed -->
         <div class="box">
-            <h4 style="margin-top:0">Recent Activity</h4>
+            <h4 style="margin-top:0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Recent Activity</h4>
             <div id="activity-list">
-                <p style="font-size: 13px; color: #94a3b8;">No entries yet.</p>
+                <!-- Data injected here -->
             </div>
-            <button class="btn" style="background: #f1f5f9; color: #475569; margin-top: 10px; font-size: 12px;" onclick="clearData()">Clear History</button>
+            <button onclick="clearData()" style="background:none; border:none; color: #ef4444; cursor:pointer; font-size: 0.8rem; margin-top: 15px; font-weight: 600;">
+                <i class="fas fa-trash-alt"></i> Wipe Records
+            </button>
         </div>
-    </div>
+    </aside>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Simple Database Logic
-    let data = JSON.parse(localStorage.getItem('ecocycle_simple')) || { items: [], points: 0 };
+    let data = JSON.parse(localStorage.getItem('ecocycle_attractive')) || { items: [], points: 0 };
 
-    // Initialize Map
-    const map = L.map('map').setView([19.076, 72.877], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const map = L.map('map', { zoomControl: false }).setView([19.076, 72.877], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
-    // Add some fake centers
     const centers = [
-        {name: "City E-Waste Center", pos: [19.076, 72.877]},
-        {name: "Green Earth Recycling", pos: [19.120, 72.900]},
-        {name: "Tech Recovery Hub", pos: [19.030, 72.850]}
+        {name: "Green Hub Central", pos: [19.076, 72.877]},
+        {name: "North Recycle Post", pos: [19.150, 72.930]},
+        {name: "West Tech Salvage", pos: [19.050, 72.830]}
     ];
-    centers.forEach(c => L.marker(c.pos).addTo(map).bindPopup(c.name));
+    centers.forEach(c => L.marker(c.pos).addTo(map).bindPopup(`<b>${c.name}</b><br>Accepting E-Waste Now`));
 
     function addEntry() {
         const name = document.getElementById('item-name').value;
-        const pointsToAdd = parseInt(document.getElementById('item-cat').value);
-        const needsPickup = document.getElementById('pickup-toggle').checked;
+        const pts = parseInt(document.getElementById('item-cat').value);
+        const pickup = document.getElementById('pickup-toggle').checked;
 
-        if (!name) return alert("Please enter the item name.");
+        if (!name) {
+            alert("Please identify the item.");
+            return;
+        }
 
-        // Add to data
-        data.items.unshift({
-            name: name,
-            points: pointsToAdd,
-            pickup: needsPickup,
-            date: new Date().toLocaleDateString()
-        });
-        data.points += pointsToAdd;
-
-        // Save and Update UI
-        localStorage.setItem('ecocycle_simple', JSON.stringify(data));
-        updateUI();
+        data.items.unshift({ name, points: pts, pickup, date: new Date().toLocaleDateString() });
+        data.points += pts;
+        localStorage.setItem('ecocycle_attractive', JSON.stringify(data));
         
-        // Reset Form
+        updateUI();
         document.getElementById('item-name').value = "";
-        document.getElementById('pickup-toggle').checked = false;
-        alert("Success! Points added.");
     }
 
     function updateUI() {
         document.getElementById('total-points').innerText = data.points;
-        
         const list = document.getElementById('activity-list');
+        
         if (data.items.length === 0) {
-            list.innerHTML = `<p style="font-size: 13px; color: #94a3b8;">No entries yet.</p>`;
+            list.innerHTML = `<p style="color:#94a3b8; font-size:0.9rem; text-align:center;">No recent logs found.</p>`;
             return;
         }
 
-        list.innerHTML = data.items.slice(0, 5).map(i => `
+        list.innerHTML = data.items.slice(0, 4).map(i => `
             <div class="history-item">
-                <span><strong>${i.name}</strong><br><small>${i.date}</small></span>
-                <span class="status-badge">${i.pickup ? 'Pickup' : 'Drop-off'}</span>
+                <div>
+                    <div style="font-weight:700; font-size:0.9rem;">${i.name}</div>
+                    <div style="font-size:0.75rem; color:#64748b;">${i.date}</div>
+                </div>
+                <span class="status-badge">${i.pickup ? 'Pickup' : 'Drop'}</span>
             </div>
         `).join('');
     }
 
     function clearData() {
-        if(confirm("Delete all history?")) {
+        if(confirm("Confirm deletion of all eco-records?")) {
             data = { items: [], points: 0 };
-            localStorage.setItem('ecocycle_simple', JSON.stringify(data));
+            localStorage.setItem('ecocycle_attractive', JSON.stringify(data));
             updateUI();
         }
     }
 
-    // Initial load
     updateUI();
 </script>
 </body>
