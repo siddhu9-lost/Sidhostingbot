@@ -4,105 +4,451 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoCycle | Premium E-Waste Recovery</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Using Google Maps API (Note: Requires API Key for production) -->
+    
+    <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome for Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Premium Font -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- PREMIUM CSS (GLASSMORPHISM & NEON) --- */
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --accent: #f0abfc;
+            --bg: #030712;
+            --glass: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at 0% 0%, #0f172a 0%, #030712 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: rgba(3, 7, 18, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 1.2rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            padding: 0 20px;
+        }
+
+        /* Glassmorphism Boxes */
+        .box {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .box:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+            transform: translateY(-4px);
+        }
+
+        h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Map Styling */
+        #map {
+            height: 350px;
+            border-radius: 18px;
+            border: 2px solid var(--glass-border);
+            margin: 15px 0;
+            filter: saturate(1.2) contrast(1.1);
+        }
+
+        #loc-status {
+            padding: 12px;
+            background: rgba(0, 242, 254, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            color: var(--primary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form Elements */
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+            margin-top: 20px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 242, 254, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        /* Custom Upload Zone */
+        .upload-zone {
+            display: block;
+            border: 2px dashed var(--text-dim);
+            padding: 30px 20px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
+            margin-top: 10px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(0, 242, 254, 0.05);
+            color: var(--primary);
+        }
+
+        .upload-zone i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .img-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 14px;
+            margin-top: 15px;
+            display: none;
+            border: 2px solid var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Animated Shimmer Button */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #030712;
+            border: none;
+            padding: 18px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 20%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+        }
+
+        .btn:hover::after {
+            left: 120%;
+        }
+
+        /* Sidebar Stats */
+        .stat-card {
+            background: linear-gradient(180deg, rgba(0, 242, 254, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            text-align: center;
+        }
+
+        .points {
+            font-size: 4.5rem;
+            font-weight: 800;
+            background: linear-gradient(to bottom, #ffffff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3));
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        /* Activity List */
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 1px solid transparent;
+            transition: 0.3s;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--glass-border);
+        }
+
+        .thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid var(--glass-border);
+        }
+
+        .clear-btn {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            color: #ff4d4d;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 20px;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 77, 77, 0.2);
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { 
+            from { opacity: 0; transform: translateX(-10px); } 
+            to { opacity: 1; transform: translateX(0); } 
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 
 <nav>
     <div class="logo"><i class="fas fa-bolt"></i> EcoCycle</div>
-    <div style="font-weight: 600;"><i class="fas fa-circle" style="color: #00ff00; font-size: 8px;"></i> Live Network</div>
+    <div style="font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-circle" style="color: #00ff00; font-size: 8px; filter: drop-shadow(0 0 5px #00ff00);"></i> 
+        Live Network
+    </div>
 </nav>
 
 <div class="container">
     <main>
+        <!-- LOCATION SECTION -->
         <div class="box">
-            <h3><i class="fas fa-map-pin" style="color: var(--primary);"></i> 1. Pick Location</h3>
-            <p style="font-size: 0.8rem; opacity: 0.7;">Click on the map to set your pickup/drop-off point.</p>
+            <h3><i class="fas fa-satellite" style="color: var(--primary);"></i> 1. Satellite Target</h3>
+            <p style="font-size: 0.85rem; opacity: 0.7; margin-top: -5px;">Tap the map to precisely mark your recovery coordinates.</p>
+            
             <div id="map"></div>
-            <p id="loc-status" style="margin-top: 10px; font-size: 0.9rem; color: var(--primary);">
-                <i class="fas fa-location-arrow"></i> Using Default Center
-            </p>
+            
+            <div id="loc-status">
+                <i class="fas fa-crosshairs"></i> Awaiting precise location...
+            </div>
         </div>
 
+        <!-- DETAILS SECTION -->
         <div class="box">
-            <h3><i class="fas fa-camera" style="color: var(--primary);"></i> 2. Item Details</h3>
+            <h3><i class="fas fa-camera-retro" style="color: var(--accent);"></i> 2. Device Details</h3>
             
-            <label>Upload Device Photo</label>
-            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)">
+            <label style="margin-top: 15px;">Visual Verification</label>
+            <!-- Hidden file input, triggered by the label below -->
+            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)" style="display: none;">
+            <label for="file-input" class="upload-zone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Click to Upload Device Photo</span>
+            </label>
             <img id="preview" class="img-preview">
 
-            <label style="display:block; margin-top:15px;">Device Name</label>
-            <input type="text" id="item-name" placeholder="e.g. Broken iPhone 12">
+            <label>Device Specification</label>
+            <input type="text" id="item-name" placeholder="e.g. Broken iPhone 12, Old Dell Monitor...">
             
-            <label style="display:block; margin-top:15px;">Impact Category</label>
+            <label>Impact Category</label>
             <select id="item-cat">
-                <option value="100">Small Electronics (100 pts)</option>
-                <option value="500">Major Appliances (500 pts)</option>
-                <option value="50">Cables & Accessories (50 pts)</option>
+                <option value="100">Small Electronics (Phones, Tablets) - 100 pts</option>
+                <option value="500">Major Appliances (TVs, Fridges) - 500 pts</option>
+                <option value="50">Cables & Accessories - 50 pts</option>
             </select>
 
-            <button class="btn" onclick="addEntry()">Finalize Log</button>
+            <button class="btn" onclick="addEntry()">Submit Recovery Log</button>
         </div>
     </main>
 
     <aside>
+        <!-- STATS SECTION -->
         <div class="box stat-card">
-            <p>Your Total Impact</p>
+            <p style="color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Total Impact</p>
             <div class="points" id="total-points">0</div>
-            <small style="text-transform: uppercase; letter-spacing: 2px;">Green Credits</small>
+            <small style="text-transform: uppercase; letter-spacing: 2px; color: var(--primary); font-weight: 800;">Green Credits</small>
         </div>
 
+        <!-- ACTIVITY SECTION -->
         <div class="box">
-            <h4 style="margin-top:0;">Recent Logs</h4>
+            <h4 style="margin-top:0; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;">Recent Recoveries</h4>
             <div id="activity-list"></div>
-            <button onclick="clearData()" style="background:none; border:none; color: #ff4d4d; cursor:pointer; font-size: 0.8rem; margin-top: 15px; width:100%; text-align:center;">
-                <i class="fas fa-undo"></i> Clear All Data
+            
+            <button class="clear-btn" onclick="clearData()">
+                <i class="fas fa-trash-alt"></i> Wipe Network Data
             </button>
         </div>
     </aside>
 </div>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // --- STATE MANAGEMENT ---
     let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
     let selectedCoords = [19.076, 72.877];
     let capturedImage = "";
 
-    // Initialize Map
-    const map = L.map('map', { zoomControl: false }).setView(selectedCoords, 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    // --- MAP INITIALIZATION (SATELLITE) ---
+    const map = L.map('map', { 
+        zoomControl: false,
+        attributionControl: false 
+    }).setView(selectedCoords, 16); 
 
-    let marker = L.marker(selectedCoords, {draggable: true}).addTo(map);
+    // Esri World Imagery (High-Quality Satellite)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19
+    }).addTo(map);
 
-    // Map Click Functionality
+    // Subtle Street Labels overlay
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        pane: 'shadowPane',
+        opacity: 0.6
+    }).addTo(map);
+
+    // Custom Glowing Marker
+    let marker = L.marker(selectedCoords, {
+        draggable: true,
+        icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:var(--primary); width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 20px var(--primary);'></div>",
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        })
+    }).addTo(map);
+
+    // Map Click Interaction
     map.on('click', function(e) {
         selectedCoords = [e.latlng.lat, e.latlng.lng];
         marker.setLatLng(e.latlng);
-        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Location Pinned: ${selectedCoords[0].toFixed(3)}, ${selectedCoords[1].toFixed(3)}`;
+        map.panTo(e.latlng);
+        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`;
+        document.getElementById('loc-status').style.color = '#00ff00';
     });
 
-    // Image Preview
+    // Marker Drag Interaction
+    marker.on('dragend', function(e) {
+        const position = marker.getLatLng();
+        selectedCoords = [position.lat, position.lng];
+        document.getElementById('loc-status').innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${selectedCoords[0].toFixed(4)}, ${selectedCoords[1].toFixed(4)}`;
+        document.getElementById('loc-status').style.color = '#00ff00';
+    });
+
+    // --- IMAGE UPLOAD LOGIC ---
     function previewImage(event) {
-        const reader = new FileReader();
-        reader.onload = function() {
-            capturedImage = reader.result;
-            const preview = document.getElementById('preview');
-            preview.src = capturedImage;
-            preview.style.display = 'block';
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                capturedImage = reader.result;
+                const preview = document.getElementById('preview');
+                preview.src = capturedImage;
+                preview.style.display = 'block';
+                // Hide the upload zone to save space once an image is chosen
+                document.querySelector('.upload-zone').style.display = 'none';
+            }
+            reader.readAsDataURL(file);
         }
-        reader.readAsDataURL(event.target.files[0]);
     }
 
+    // --- SUBMIT LOGIC ---
     function addEntry() {
         const name = document.getElementById('item-name').value;
         const pts = parseInt(document.getElementById('item-cat').value);
 
         if (!name || !capturedImage) {
-            alert("Please upload a photo and enter item name.");
+            alert("⚠️ Please provide both a device photo and a device name.");
             return;
         }
 
@@ -126,15 +472,20 @@
         document.getElementById('item-name').value = "";
         document.getElementById('file-input').value = "";
         document.getElementById('preview').style.display = 'none';
+        document.querySelector('.upload-zone').style.display = 'block'; // Bring back the upload button
         capturedImage = "";
     }
 
+    // --- UI UPDATES ---
     function updateUI() {
-        document.getElementById('total-points').innerText = data.points;
+        // Animate points counting up (basic implementation)
+        const pointsDisplay = document.getElementById('total-points');
+        pointsDisplay.innerText = data.points;
+
         const list = document.getElementById('activity-list');
         
         if (data.items.length === 0) {
-            list.innerHTML = `<p style="text-align:center; opacity:0.5;">No entries yet.</p>`;
+            list.innerHTML = `<p style="text-align:center; opacity:0.4; font-size: 0.9rem; padding: 20px 0;">No active recoveries logged.</p>`;
             return;
         }
 
@@ -142,22 +493,27 @@
             <div class="history-item">
                 <img src="${i.image}" class="thumb">
                 <div style="flex:1">
-                    <div style="font-weight:700;">${i.name}</div>
-                    <div style="font-size:0.7rem; opacity:0.6;">${i.date} • ${i.points} pts</div>
+                    <div style="font-weight:700; font-size: 0.95rem;">${i.name}</div>
+                    <div style="font-size:0.75rem; color: var(--text-dim); margin-top: 4px;">
+                        <i class="far fa-calendar-alt"></i> ${i.date} • <span style="color: var(--primary); font-weight: 600;">+${i.points} pts</span>
+                    </div>
                 </div>
-                <i class="fas fa-map-marker-alt" style="color:var(--primary); font-size: 0.8rem;" title="${i.coords}"></i>
+                <div style="background: rgba(0, 242, 254, 0.1); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Lat: ${i.coords[0].toFixed(3)}, Lon: ${i.coords[1].toFixed(3)}">
+                    <i class="fas fa-location-arrow" style="color:var(--primary); font-size: 0.9rem;"></i>
+                </div>
             </div>
         `).join('');
     }
 
     function clearData() {
-        if(confirm("Wipe all data?")) {
+        if(confirm("⚠️ Are you sure you want to wipe all local recovery data? This cannot be undone.")) {
             data = { items: [], points: 0 };
-            localStorage.setItem('ecocycle_v4', JSON.stringify(data));
+            localStorage.removeItem('ecocycle_v4');
             updateUI();
         }
     }
 
+    // Initialize UI on load
     updateUI();
 </script>
 </body>
