@@ -1,22 +1,10 @@
-// --- 1. SESSION SECURITY (Check this first!) ---
-const currentUser = JSON.parse(localStorage.getItem('ecocycle_session'));
-if (!currentUser) {
-    window.location.href = 'auth.html'; // Redirect if no session found
-}
-
-// Logout Functionality
-function logout() {
-    localStorage.removeItem('ecocycle_session');
-    window.location.href = 'auth.html';
-}
-
-// --- 2. STATE MANAGEMENT ---
+// --- STATE MANAGEMENT ---
 let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
 let selectedCoords = [19.076, 72.877];
 let capturedImage = "";
 let previousPoints = data.points; // For the counting animation
 
-// --- 3. MAP INITIALIZATION ---
+// --- MAP INITIALIZATION ---
 const map = L.map('map', { 
     zoomControl: false, 
     attributionControl: false 
@@ -40,7 +28,7 @@ let marker = L.marker(selectedCoords, {
     })
 }).addTo(map);
 
-// --- 4. LOCATION FUNCTIONS ---
+// --- NEW: GPS AUTO-LOCATE ---
 function useCurrentLocation() {
     if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(position => {
@@ -55,18 +43,15 @@ function updateLocation(lat, lng) {
     selectedCoords = [lat, lng];
     marker.setLatLng([lat, lng]);
     map.panTo([lat, lng]);
-    const statusBox = document.getElementById('loc-status');
-    if (statusBox) {
-        statusBox.innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    }
+    document.getElementById('loc-status').innerHTML = 
+        `<i class="fas fa-check-circle"></i> Target Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
 map.on('click', (e) => updateLocation(e.latlng.lat, e.latlng.lng));
 
-// --- 5. DATA & UI UTILITIES ---
+// --- NEW: ANIMATED POINT COUNTER ---
 function animateValue(id, start, end, duration) {
     const obj = document.getElementById(id);
-    if (!obj) return;
     let startTimestamp = null;
     const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
@@ -77,6 +62,7 @@ function animateValue(id, start, end, duration) {
     window.requestAnimationFrame(step);
 }
 
+// --- NEW: EXPORT DATA AS FILE ---
 function exportData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
     const downloadAnchorNode = document.createElement('a');
@@ -87,6 +73,7 @@ function exportData() {
     downloadAnchorNode.remove();
 }
 
+// --- NEW: SOCIAL SHARE ---
 function shareRecovery(name, pts) {
     const text = `I just recycled ${name} and earned ${pts} points on EcoCycle! 🌍`;
     if (navigator.share) {
@@ -96,13 +83,10 @@ function shareRecovery(name, pts) {
     }
 }
 
-// --- 6. CORE APP LOGIC ---
+// --- CORE FUNCTIONS ---
 function addEntry() {
-    const nameInput = document.getElementById('item-name');
-    const catInput = document.getElementById('item-cat');
-    
-    const name = nameInput ? nameInput.value : "";
-    const pts = catInput ? parseInt(catInput.value) : 0;
+    const name = document.getElementById('item-name').value;
+    const pts = parseInt(document.getElementById('item-cat').value);
 
     if (!name || !capturedImage) {
         showNotification("Missing Photo or Name", "error");
@@ -111,11 +95,7 @@ function addEntry() {
 
     const entry = {
         id: Date.now(),
-        name, 
-        points: pts, 
-        image: capturedImage, 
-        coords: selectedCoords, 
-        date: new Date().toLocaleDateString()
+        name, points: pts, image: capturedImage, coords: selectedCoords, date: new Date().toLocaleDateString()
     };
 
     data.items.unshift(entry);
@@ -124,14 +104,12 @@ function addEntry() {
     localStorage.setItem('ecocycle_v4', JSON.stringify(data));
     
     updateUI();
-    // Assuming resetForm() exists to clear inputs
-    if (typeof resetForm === "function") resetForm(); 
+    resetForm();
 }
 
 function updateUI() {
     animateValue("total-points", previousPoints, data.points, 1000);
     const list = document.getElementById('activity-list');
-    if (!list) return;
     
     list.innerHTML = data.items.slice(0, 5).map(i => `
         <div class="history-item">
@@ -147,14 +125,11 @@ function updateUI() {
     `).join('');
 }
 
+// Helper for UI Feedback
 function showNotification(msg, type) {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:8px; background:#333; color:#fff; z-index:10000;";
     toast.innerText = msg;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
-
-// Initialize UI on load
-window.onload = updateUI;
