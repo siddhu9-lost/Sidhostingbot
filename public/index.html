@@ -613,6 +613,16 @@
             updateUI();
             showToast("Network data wiped.", "error");
         }
+        // --- 0. SESSION GATEKEEPER ---
+if (!localStorage.getItem('ecocycle_session')) {
+    window.location.href = 'auth.html';
+}
+
+// Optional: Add a Logout button link in your Nav
+function logout() {
+    localStorage.removeItem('ecocycle_session');
+    window.location.href = 'auth.html';
+}
     }
 
     // Init
