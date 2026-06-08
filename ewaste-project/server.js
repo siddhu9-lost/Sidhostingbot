@@ -3,30 +3,56 @@ let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], point
 let selectedCoords = [19.076, 72.877];
 let capturedImage = "";
 let previousPoints = data.points; // For the counting animation
-// --- MAP INITIALIZATION ---
-const map = L.map('map', { 
-    zoomControl: false, 
-    attributionControl: false 
-}).setView(selectedCoords, 15);
+// --- MAP & LIVE TRACKING LOGIC ---
+    let map, marker;
+    function initMap() {
+        // Prevent initialization errors if map already exists
+        if (map !== undefined) { map.remove(); }
 
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
-    maxZoom: 19 
-}).addTo(map);
+        // Initialize targeting Sangamner coordinates
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView(selectedCoords, 15);
+        
+        // FIX 1: Upgraded to ultra-reliable Google Satellite Tiles
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { 
+            maxZoom: 20 
+        }).addTo(map);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { 
+            pane: 'shadowPane' 
+        }).addTo(map);
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { 
-    pane: 'shadowPane' 
-}).addTo(map);
+        marker = L.marker(selectedCoords, {
+            draggable: true,
+            icon: L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:var(--primary); width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 20px var(--primary); animation: pulse 1.5s infinite;'></div>",
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            })
+        }).addTo(map);
 
-let marker = L.marker(selectedCoords, {
-    draggable: true,
-    icon: L.divIcon({
-        className: 'custom-div-icon',
-        html: "<div style='background-color:var(--primary); width:15px; height:15px; border-radius:50%; border:2px solid white; box-shadow:0 0 15px var(--primary);'></div>",
-        iconSize: [15, 15],
-        iconAnchor: [7, 7]
-    })
-}).addTo(map);
+        map.on('click', function(e) { 
+            if(liveWatchId) toggleLiveLocation(); 
+            updateLocation(e.latlng.lat, e.latlng.lng, true); 
+        });
+        
+        marker.on('dragend', function() { 
+            if(liveWatchId) toggleLiveLocation(); 
+            const pos = marker.getLatLng(); updateLocation(pos.lat, pos.lng, true); 
+        });
+        
+        if(!document.getElementById('pulse-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-style';
+            style.innerHTML = `@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(0, 242, 254, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); } }`;
+            document.head.appendChild(style);
+        }
 
+        // FIX 2: Force Leaflet to recalculate container dimensions after UI loads
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 400);
+    }
         map.on('click', function(e) { 
             if(liveWatchId) toggleLiveLocation(); 
             updateLocation(e.latlng.lat, e.latlng.lng, true); 
