@@ -8,9 +8,73 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
 
     <style>
+        /* =========================================
+           PRO VISUAL ENGINE & DYNAMIC BACKGROUNDS
+           ========================================= */
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --accent: #f0abfc;
+            --bg-dark: #030712;
+            --glass: rgba(15, 23, 42, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-color: var(--bg-dark);
+        }
+
+        /* 1. Cinematic Background Wallpaper */
+        .ambient-background {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            opacity: 0.4; /* Dimmed for readability */
+            z-index: -3;
+        }
+
+        /* 2. Floating Neon Orbs (Dynamic Effect) */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -2;
+            animation: floatOrb 20s infinite alternate ease-in-out;
+            opacity: 0.6;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--primary); top: -10%; left: -10%; animation-delay: 0s; }
+        .orb-2 { width: 500px; height: 500px; background: var(--accent); bottom: -20%; right: -10%; animation-delay: -5s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--secondary); top: 40%; left: 50%; animation-delay: -10s; }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(100px, 50px) scale(1.2); }
+            100% { transform: translate(-50px, 150px) scale(0.9); }
+        }
+
+        /* UI Overlay to ensure contrast */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(180deg, rgba(3,7,18,0.2) 0%, rgba(3,7,18,0.8) 100%);
+            z-index: -1;
+        }
+
+        /* =========================================
+           CORE UI COMPONENTS
+           ========================================= */
         .container {
             max-width: 1200px;
             margin: 40px auto;
@@ -18,11 +82,14 @@
             grid-template-columns: 1fr 400px;
             gap: 30px;
             padding: 0 20px;
+            position: relative;
+            z-index: 10;
         }
 
         nav {
-            background: rgba(3, 7, 18, 0.7);
-            backdrop-filter: blur(16px);
+            background: rgba(3, 7, 18, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             padding: 1.2rem 8%;
             display: flex;
             justify-content: space-between;
@@ -31,44 +98,99 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .logo {
             font-size: 1.6rem;
             font-weight: 800;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+            background: linear-gradient(to right, #fff, var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
             gap: 10px;
+            filter: drop-shadow(0 0 10px rgba(0,242,254,0.3));
         }
 
-        /* MAP FIX: Enforce absolute map sizing to prevent Leaflet render bugs */
-        #map {
-            width: 100% !important;
-            height: 350px !important;
-            min-height: 350px !important;
-            border-radius: 20px;
-            margin: 15px 0;
-            border: 2px solid var(--glass-border);
-            z-index: 1;
-            background: #e5e5e5;
+        /* Pro Glassmorphism Boxes with 3D Tilt prep */
+        .box {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 35px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+            position: relative;
+            overflow: hidden;
         }
 
-        .upload-zone {
+        .box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg);
+            transition: 0.7s;
+        }
+
+        .box:hover::before { left: 150%; }
+        .box:hover {
+            border-color: rgba(0, 242, 254, 0.5);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 242, 254, 0.1);
+            transform: translateY(-5px);
+        }
+
+        /* Inputs & Controls */
+        input, select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 16px 20px;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            transition: 0.3s;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            background: rgba(0, 0, 0, 0.6);
+            transform: translateY(-2px);
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 20px 0 8px 0;
             display: block;
-            border: 2px dashed var(--text-dim);
-            padding: 30px 20px;
-            border-radius: 16px;
-            text-align: center;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(255,255,255,0.3);
+            padding: 40px 20px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(0, 0, 0, 0.2);
             color: var(--text-main);
             margin-top: 10px;
         }
-
         .upload-zone:hover {
             border-color: var(--primary);
             background: rgba(0, 242, 254, 0.05);
@@ -76,61 +198,139 @@
             transform: scale(1.02);
         }
 
-        .gps-btn, .export-btn, .clear-btn {
-            background: rgba(0, 242, 254, 0.1);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 12px;
-            border-radius: 12px;
+        /* Primary Button */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #030712;
+            border: none;
+            padding: 18px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 1px;
             width: 100%;
-            margin-top: 10px;
             cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3);
+            text-transform: uppercase;
         }
-        .gps-btn:hover { background: rgba(0, 242, 254, 0.2); transform: translateY(-2px); }
-
-        #loc-status {
-            padding: 12px;
-            background: rgba(0, 242, 254, 0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(0, 242, 254, 0.1);
-            color: var(--primary);
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            transition: 0.3s;
+        .btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 242, 254, 0.5);
         }
 
+        /* Map Fixes */
+        #map {
+            width: 100% !important;
+            height: 380px !important;
+            border-radius: 20px;
+            margin: 15px 0;
+            border: 2px solid var(--glass-border);
+            z-index: 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Dynamic AI Scanner */
+        .scan-container {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 20px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid var(--primary);
+            box-shadow: 0 10px 40px rgba(0, 242, 254, 0.3);
+        }
+        .scan-container img {
+            width: 100%; height: 250px; object-fit: cover; display: block;
+        }
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: #fff; box-shadow: 0 0 20px 8px var(--primary);
+            z-index: 10; display: none;
+        }
+
+        /* Stats & History */
+        .stat-card {
+            background: linear-gradient(180deg, rgba(0, 242, 254, 0.15) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            text-align: center;
+        }
+        .points {
+            font-size: 5rem;
+            font-weight: 800;
+            background: linear-gradient(to bottom, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4));
+            line-height: 1.1;
+        }
+        .history-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+            transform: translateX(8px);
+        }
+
+        /* Animations */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scanMotion {
+            0% { top: 0%; opacity: 1; }
+            50% { top: 100%; opacity: 1; }
+            100% { top: 0%; opacity: 1; }
+        }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
+<div class="ambient-background"></div>
+<div class="overlay"></div>
+<div class="bg-orb orb-1"></div>
+<div class="bg-orb orb-2"></div>
+<div class="bg-orb orb-3"></div>
+
 <nav>
-    <div class="logo"><i class="fas fa-bolt"></i> EcoCycle</div>
+    <div class="logo"><i class="fas fa-bolt"></i> EcoCycle Pro</div>
     <div style="display: flex; gap: 15px; align-items: center;">
-        <span id="user-greeting" style="font-weight: 600; font-size: 0.9rem; color: var(--primary);"></span>
-        <button id="logout-btn" onclick="logout()" style="display: none; background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.4); color: white; padding: 6px 16px; border-radius: 8px; cursor: pointer; transition: 0.3s;">Logout</button>
+        <span id="user-greeting" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);"></span>
+        <button id="logout-btn" onclick="logout()" style="display: none; background: rgba(255,77,77,0.15); border: 1px solid rgba(255,77,77,0.4); color: white; padding: 8px 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-weight: bold;">Logout</button>
     </div>
 </nav>
 
 <div class="container" id="app-container">
     <main id="user-submit-area">
-        <div class="box">
-            <h3><i class="fas fa-satellite" style="color: var(--primary);"></i> 1. Live Satellite Target</h3>
+        <div class="box" style="animation-delay: 0.1s;">
+            <h3 style="margin-top:0; color: var(--text-main); font-size: 1.4rem;"><i class="fas fa-satellite" style="color: var(--primary);"></i> 1. Live Satellite Uplink</h3>
             <div id="map"></div>
-            <div id="loc-status"><i class="fas fa-crosshairs"></i> Awaiting precise location...</div>
-            <button class="gps-btn" id="gps-btn" onclick="toggleLiveLocation()"><i class="fas fa-location-arrow"></i> Enable Live Tracking</button>
+            <div id="loc-status" style="padding: 15px; background: rgba(0, 242, 254, 0.05); border-radius: 14px; border: 1px solid rgba(0, 242, 254, 0.1); color: var(--primary); font-size: 0.95rem; font-weight: 600; transition: 0.3s;">
+                <i class="fas fa-crosshairs fa-spin"></i> Awaiting precise coordinates...
+            </div>
+            <button class="btn" id="gps-btn" onclick="toggleLiveLocation()" style="background: rgba(0, 242, 254, 0.1); border: 1px solid var(--primary); color: var(--primary); margin-top: 15px; box-shadow: none;">
+                <i class="fas fa-location-arrow"></i> Enable Continuous GPS Tracking
+            </button>
         </div>
 
-        <div class="box">
-            <h3><i class="fas fa-microchip" style="color: var(--accent);"></i> 2. AI Vision Analysis</h3>
+        <div class="box" style="animation-delay: 0.2s;">
+            <h3 style="margin-top:0; color: var(--text-main); font-size: 1.4rem;"><i class="fas fa-microchip" style="color: var(--accent);"></i> 2. AI Vision Matrix</h3>
             
-            <label style="margin-top: 15px;">Upload Image for AI Classification</label>
+            <label>Upload Image for Neural Classification</label>
             <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)" style="display: none;">
             <label for="file-input" class="upload-zone" id="upload-label">
-                <i class="fas fa-cloud-upload-alt fa-2x" style="margin-bottom: 10px; display: block;"></i>
-                <span id="upload-text">Click to Upload Device Photo</span>
+                <i class="fas fa-cloud-upload-alt fa-3x" style="margin-bottom: 15px; color: var(--text-dim);"></i>
+                <span id="upload-text" style="font-weight: 600;">Click or Drag Device Photo</span>
             </label>
             
             <div class="scan-container" id="scan-wrapper">
@@ -138,112 +338,115 @@
                 <img id="preview" src="">
             </div>
 
-            <div id="ai-process-info" class="ai-box"></div>
+            <div id="ai-process-info" style="display:none; margin-top: 20px; padding: 20px; background: rgba(240, 171, 252, 0.1); border: 1px solid var(--accent); border-radius: 16px; font-size: 0.95rem; color: var(--accent); animation: slideUpFade 0.5s;"></div>
 
-            <label style="margin-top: 15px;">Identified Specification</label>
-            <input type="text" id="item-name" placeholder="Waiting for AI or manual entry...">
+            <label>Identified Specification</label>
+            <input type="text" id="item-name" placeholder="Awaiting neural network or manual entry...">
             
             <label>Impact Category</label>
             <select id="item-cat">
-                <option value="100">Small Electronics (Phones, Tablets) - 100 pts</option>
-                <option value="500">Major Appliances (TVs, Fridges) - 500 pts</option>
-                <option value="50">Cables & Accessories - 50 pts</option>
+                <option value="100">Small Electronics (Phones, Tablets) - 100 CR</option>
+                <option value="500">Major Appliances (TVs, Fridges) - 500 CR</option>
+                <option value="50">Cables & Accessories - 50 CR</option>
             </select>
 
-            <button class="btn" id="submit-btn" style="margin-top: 30px;" onclick="addEntry()">Submit Recovery Log</button>
+            <button class="btn" id="submit-btn" style="margin-top: 35px;" onclick="addEntry()">Transmit Recovery Log</button>
         </div>
     </main>
 
     <aside id="user-sidebar-area">
-        <div class="box stat-card">
-            <p style="color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Total Impact</p>
+        <div class="box stat-card" style="animation-delay: 0.3s;">
+            <p style="color: var(--text-dim); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0;">Total Impact</p>
             <div class="points" id="total-points">0</div>
-            <small style="text-transform: uppercase; letter-spacing: 2px; color: var(--primary); font-weight: 800;">Green Credits</small>
+            <small style="text-transform: uppercase; letter-spacing: 3px; color: var(--primary); font-weight: 800;">Green Credits</small>
         </div>
 
-        <div class="box">
-            <h4 style="margin-top:0; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;">My Active Queries</h4>
+        <div class="box" style="animation-delay: 0.4s;">
+            <h4 style="margin-top:0; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">My Active Log</h4>
             <div id="activity-list"></div>
         </div>
     </aside>
 </div>
 
-<div id="bottom-auth-bar" style="text-align: center; margin-top: 20px; padding: 30px; background: rgba(3, 7, 18, 0.8); border-top: 1px solid var(--glass-border); animation: slideUpFade 1s ease forwards;">
-    <h3 style="margin-top:0;">Want to report e-waste and track its status?</h3>
-    <p style="color: var(--text-dim);">Join the EcoCycle network to upload photos, get AI analysis, and alert municipal authorities.</p>
-    <a href="auth.html" class="btn" style="display: inline-block; width: auto; padding: 15px 40px; text-decoration: none;">Login / Register</a>
+<div id="bottom-auth-bar" style="text-align: center; margin-top: 20px; padding: 50px 20px; background: rgba(3, 7, 18, 0.7); backdrop-filter: blur(20px); border-top: 1px solid var(--glass-border); animation: slideUpFade 1s ease forwards;">
+    <h2 style="margin-top:0; font-size: 2rem;">Join the EcoCycle Network</h2>
+    <p style="color: var(--text-dim); font-size: 1.1rem; max-width: 600px; margin: 0 auto 30px auto;">Connect to the grid to upload device scans, utilize AI classification, and alert local municipal authorities instantly.</p>
+    <a href="auth.html" class="btn" style="display: inline-block; width: auto; padding: 18px 50px; text-decoration: none;">Initialize Secure Login</a>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="effects.js"></script>
 <script>
-    // --- STATE & AUTH MANAGEMENT ---
-    let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
-    let session = JSON.parse(localStorage.getItem('ecocycle_session'));
-    let selectedCoords = [19.576, 74.205]; // Default Map
-    let capturedImage = "";
-    let aiDeterminedProcess = "";
-    let displayedPoints = 0;
-    let liveWatchId = null;
+    // --- CONFETTI & UI EFFECTS ENGINE ---
+    window.fireConfetti = function() {
+        const colors = ['#00f2fe', '#4facfe', '#f0abfc', '#ffffff'];
+        for (let i = 0; i < 80; i++) {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed'; particle.style.top = '50%'; particle.style.left = '50%';
+            particle.style.width = Math.random() * 8 + 4 + 'px'; particle.style.height = particle.style.width;
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.borderRadius = '50%'; particle.style.pointerEvents = 'none'; particle.style.zIndex = '9999';
+            document.body.appendChild(particle);
+            const angle = Math.random() * Math.PI * 2; const velocity = 10 + Math.random() * 20;
+            const tx = Math.cos(angle) * velocity * 25; const ty = Math.sin(angle) * velocity * 25 - 150;
+            particle.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+            ], { duration: 1000 + Math.random() * 1000, easing: 'cubic-bezier(0, .9, .57, 1)' }).onfinish = () => particle.remove();
+        }
+    };
 
     function showToast(message, type = "success") {
         const toast = document.createElement('div');
         toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
         toast.style.cssText = `
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: ${type === 'error' ? 'rgba(255, 77, 77, 0.95)' : 'rgba(0, 242, 254, 0.95)'};
-            color: ${type === 'error' ? '#fff' : '#030712'};
-            padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px);
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 10px;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: ${type === 'error' ? 'rgba(255, 50, 50, 0.95)' : 'rgba(0, 242, 254, 0.95)'};
+            color: ${type === 'error' ? '#fff' : '#030712'}; padding: 16px 32px; border-radius: 50px; 
+            font-weight: 800; font-size: 1rem; box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 12px;
         `;
         document.body.appendChild(toast);
         setTimeout(() => toast.style.transform = 'translateX(-50%) translateY(0)', 10);
-        setTimeout(() => {
-            toast.style.transform = 'translateX(-50%) translateY(100px)';
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
+        setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(100px)'; setTimeout(() => toast.remove(), 500); }, 3500);
     }
 
-    function logout() {
-        localStorage.removeItem('ecocycle_session');
-        window.location.reload();
-    }
+    // --- STATE MANAGEMENT ---
+    let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
+    let session = JSON.parse(localStorage.getItem('ecocycle_session'));
+    let selectedCoords = [19.576, 74.205]; // Default Target
+    let capturedImage = "", aiDeterminedProcess = "", displayedPoints = 0, liveWatchId = null;
+    let map, marker;
 
-    // --- MUNICIPAL DASHBOARD LOGIC ---
+    function logout() { localStorage.removeItem('ecocycle_session'); window.location.reload(); }
+
+    // --- MUNICIPAL DASHBOARD ---
     function renderMunicipalDashboard() {
         document.getElementById('app-container').innerHTML = `
             <div class="box" style="grid-column: 1 / -1;">
-                <h3><i class="fas fa-city" style="color: var(--primary);"></i> Municipal Control Center</h3>
-                <p style="color: var(--text-dim);">Review AI-classified citizen reports, view screenshots, and update recovery statuses.</p>
-                <div id="muni-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;"></div>
+                <h3 style="font-size: 1.8rem;"><i class="fas fa-city" style="color: var(--primary);"></i> Municipal Control Center</h3>
+                <p style="color: var(--text-dim); font-size: 1.1rem;">Monitor live citizen reports, review neural classifications, and dispatch recovery teams.</p>
+                <div id="muni-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; margin-top: 30px;"></div>
             </div>
         `;
         const grid = document.getElementById('muni-grid');
-        
-        if(data.items.length === 0) {
-            grid.innerHTML = `<p style="opacity: 0.5; padding: 20px;">No citizen queries submitted yet.</p>`;
-            return;
-        }
+        if(data.items.length === 0) { grid.innerHTML = `<p style="opacity: 0.5;">No active signals detected.</p>`; return; }
 
         grid.innerHTML = data.items.map((item, index) => {
-            let statusClass = item.status === 'Done' ? 'status-done' : (item.status === 'In Progress' ? 'status-progress' : 'status-pending');
+            let statusColor = item.status === 'Done' ? '#00ff80' : (item.status === 'In Progress' ? '#00f2fe' : '#ffc107');
             return `
-                <div class="history-item" style="display: block; position: relative; animation-delay: ${index * 0.1}s">
-                    <span class="status-badge ${statusClass}" style="position: absolute; top: 10px; right: 10px; z-index: 10; backdrop-filter: blur(5px);">
-                        ${item.status || 'Pending'}
-                    </span>
-                    <img src="${item.image}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); transition: 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                    <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">${item.name}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px;">
-                        <i class="fas fa-user"></i> ${item.userEmail || 'Anonymous'}<br>
-                        <i class="fas fa-map-marker-alt"></i> Lat: ${item.coords[0].toFixed(3)}, Lon: ${item.coords[1].toFixed(3)}
+                <div class="history-item" style="display: block; position: relative; background: rgba(0,0,0,0.5); padding: 20px; animation-delay: ${index * 0.1}s">
+                    <span style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); border: 1px solid ${statusColor}; color: ${statusColor}; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">${item.status || 'Pending'}</span>
+                    <img src="${item.image}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 14px; margin-bottom: 20px; border: 1px solid var(--glass-border);">
+                    <div style="font-weight: 800; font-size: 1.2rem; margin-bottom: 8px;">${item.name}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 15px; line-height: 1.6;">
+                        <i class="fas fa-user-astronaut"></i> ${item.userEmail || 'Anonymous'}<br>
+                        <i class="fas fa-satellite-dish"></i> Lat: ${item.coords[0].toFixed(4)}, Lon: ${item.coords[1].toFixed(4)}
                     </div>
-                    <div style="background: rgba(240, 171, 252, 0.1); padding: 10px; border-radius: 8px; font-size: 0.8rem; color: var(--accent); margin-bottom: 15px; border: 1px solid rgba(240, 171, 252, 0.2);">
-                        <strong><i class="fas fa-robot"></i> AI Process Plan:</strong><br>${item.aiProcess || 'Standard Manual Processing'}
+                    <div style="background: rgba(240, 171, 252, 0.05); padding: 15px; border-radius: 12px; font-size: 0.85rem; color: var(--accent); margin-bottom: 20px; border: 1px solid rgba(240, 171, 252, 0.2);">
+                        <strong><i class="fas fa-network-wired"></i> AI Process Plan:</strong><br>${item.aiProcess || 'Standard Manual Processing'}
                     </div>
-                    <label>Update Status:</label>
-                    <select onchange="updateItemStatus(${item.id}, this.value)" style="padding: 10px; font-size: 0.9rem; margin-top: 5px;">
+                    <label style="margin-top:0;">Override Status:</label>
+                    <select onchange="updateItemStatus(${item.id}, this.value)" style="padding: 12px; font-size: 0.95rem;">
                         <option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Done" ${item.status === 'Done' ? 'selected' : ''}>Done</option>
@@ -258,128 +461,96 @@
         if(item) {
             item.status = newStatus;
             localStorage.setItem('ecocycle_v4', JSON.stringify(data));
-            if(newStatus === 'Done' && window.fireConfetti) window.fireConfetti();
-            showToast(`Query marked as ${newStatus}`);
+            if(newStatus === 'Done') window.fireConfetti();
+            showToast(`Protocol updated to: ${newStatus}`);
             renderMunicipalDashboard();
         }
     }
 
-    // --- MAP & LIVE TRACKING LOGIC ---
-    let map, marker;
+    // --- SATELLITE MAP ENGINE ---
     function initMap() {
         if (map) map.remove();
-
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView(selectedCoords, 16);
         
-        // Bulletproof Google Tiles
+        // High-Res Google Satellite Tiles
         L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
         marker = L.marker(selectedCoords, {
             draggable: true,
             icon: L.divIcon({
                 className: 'custom-div-icon',
-                html: "<div style='background-color:var(--primary); width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 20px var(--primary); animation: pulse 1.5s infinite;'></div>",
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
+                html: "<div style='background-color:var(--primary); width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 25px var(--primary); animation: pulse 1.5s infinite;'></div>",
+                iconSize: [20, 20], iconAnchor: [10, 10]
             })
         }).addTo(map);
 
-        map.on('click', function(e) { 
-            if(liveWatchId) toggleLiveLocation(); // Stop tracking if user manually clicks map
-            updateLocation(e.latlng.lat, e.latlng.lng, true); 
-        });
-        
-        marker.on('dragend', function() { 
-            if(liveWatchId) toggleLiveLocation(); 
-            const pos = marker.getLatLng(); updateLocation(pos.lat, pos.lng, true); 
-        });
+        map.on('click', function(e) { if(liveWatchId) toggleLiveLocation(); updateLocation(e.latlng.lat, e.latlng.lng, true); });
+        marker.on('dragend', function() { if(liveWatchId) toggleLiveLocation(); const pos = marker.getLatLng(); updateLocation(pos.lat, pos.lng, true); });
         
         if(!document.getElementById('pulse-style')) {
-            const style = document.createElement('style');
-            style.id = 'pulse-style';
-            style.innerHTML = `@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(0, 242, 254, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); } }`;
+            const style = document.createElement('style'); style.id = 'pulse-style';
+            style.innerHTML = `@keyframes pulse { 0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.8); } 70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(0, 242, 254, 0); } 100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); } }`;
             document.head.appendChild(style);
         }
 
-        // The critical fix: Force Leaflet to resize after layout stabilizes
-        setTimeout(() => { map.invalidateSize(); }, 500);
+        setTimeout(() => { map.invalidateSize(); }, 600); // Crucial layout fix
     }
 
     function updateLocation(lat, lng, fly = false) {
         selectedCoords = [lat, lng];
         if(marker) marker.setLatLng([lat, lng]);
         
-        if(fly && map) {
-            map.flyTo([lat, lng], 17, { duration: 1.2, easeLinearity: 0.25 });
-        } else if(map) {
-            map.panTo([lat, lng]);
-        }
+        if(fly && map) { map.flyTo([lat, lng], 17, { duration: 1.5, easeLinearity: 0.25 }); } 
+        else if(map) { map.panTo([lat, lng]); }
         
         const locStatus = document.getElementById('loc-status');
         if(locStatus) {
-            locStatus.style.background = 'rgba(0, 255, 128, 0.1)';
-            locStatus.style.borderColor = 'rgba(0, 255, 128, 0.3)';
-            locStatus.style.color = '#00ff80';
-            locStatus.innerHTML = `<i class="fas fa-satellite-dish"></i> Satellite Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            locStatus.style.background = 'rgba(0, 255, 128, 0.15)'; locStatus.style.borderColor = 'rgba(0, 255, 128, 0.4)'; locStatus.style.color = '#00ff80';
+            locStatus.innerHTML = `<i class="fas fa-satellite-dish"></i> Target Locked: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         }
     }
 
-    // Toggle Continuous GPS Tracking
     function toggleLiveLocation() {
         const btn = document.getElementById('gps-btn');
-        
         if (liveWatchId) {
-            // Stop Tracking
-            navigator.geolocation.clearWatch(liveWatchId);
-            liveWatchId = null;
-            btn.innerHTML = `<i class="fas fa-location-arrow"></i> Enable Live Tracking`;
-            btn.style.background = 'rgba(0, 242, 254, 0.1)';
-            showToast("Live tracking suspended.", "error");
+            navigator.geolocation.clearWatch(liveWatchId); liveWatchId = null;
+            btn.innerHTML = `<i class="fas fa-location-arrow"></i> Enable Continuous GPS Tracking`;
+            btn.style.background = 'rgba(0, 242, 254, 0.1)'; btn.style.color = 'var(--primary)';
+            showToast("Tracking suspended.", "error");
         } else {
-            // Start Tracking
             if ("geolocation" in navigator) {
-                showToast("Acquiring continuous GPS lock...", "success");
-                btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Tracking Active...`;
-                btn.style.background = 'rgba(0, 255, 128, 0.2)';
+                showToast("Establishing satellite handshake...", "success");
+                btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Tracking Active & Syncing...`;
+                btn.style.background = 'rgba(0, 255, 128, 0.2)'; btn.style.color = '#00ff80'; btn.style.borderColor = '#00ff80';
                 
                 let isFirstLock = true;
                 liveWatchId = navigator.geolocation.watchPosition(position => {
                     updateLocation(position.coords.latitude, position.coords.longitude, isFirstLock);
-                    isFirstLock = false; // Only do the cinematic "flyTo" zoom on the very first lock
+                    isFirstLock = false; 
                 }, error => {
-                    showToast("GPS signal lost or denied.", "error");
-                    toggleLiveLocation(); // reset button state
-                }, {
-                    enableHighAccuracy: true,
-                    maximumAge: 10000,
-                    timeout: 5000
-                });
-            } else {
-                showToast("Geolocation not supported.", "error");
+                    showToast("GPS signal lost.", "error"); toggleLiveLocation(); 
+                }, { enableHighAccuracy: true });
             }
         }
     }
 
-    // --- AI / ML SIMULATION LOGIC ---
+    // --- AI NEURAL SIMULATOR ---
     function previewImage(event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function() {
                 capturedImage = reader.result;
-                const wrapper = document.getElementById('scan-wrapper');
-                const preview = document.getElementById('preview');
-                const scanLine = document.getElementById('scan-line');
-                
-                preview.src = capturedImage;
+                document.getElementById('preview').src = capturedImage;
                 document.getElementById('upload-label').style.display = 'none';
+                document.getElementById('scan-wrapper').style.display = 'block';
                 
-                wrapper.style.display = 'block';
+                const scanLine = document.getElementById('scan-line');
                 scanLine.style.display = 'block';
-                scanLine.style.animation = 'scanMotion 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite';
+                scanLine.style.animation = 'scanMotion 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite';
                 
                 runAIModel();
             }
@@ -390,43 +561,38 @@
     function runAIModel() {
         const aiBox = document.getElementById('ai-process-info');
         aiBox.style.display = 'block';
-        aiBox.style.opacity = '1';
-        aiBox.innerHTML = `<i class="fas fa-crosshairs fa-spin" style="color:var(--primary);"></i> Neural Network scanning scrap architecture...`;
+        aiBox.innerHTML = `<i class="fas fa-crosshairs fa-spin" style="color:var(--primary);"></i> Initializing Neural Scan... Analyzing material composition.`;
         
         setTimeout(() => {
             document.getElementById('scan-line').style.display = 'none';
-            
             const models = [
-                { name: "Smartphone / Mobile Board", cat: 100, process: "Phase 1: Lithium-ion battery extracted safely. Phase 2: PCB shredded for chemical precious metal leaching." },
-                { name: "Damaged LCD Monitor", cat: 500, process: "Phase 1: Vacuum extraction of cold cathode fluorescent lamps (mercury). Phase 2: Glass sorting." },
-                { name: "Mixed Copper Wiring", cat: 50, process: "Phase 1: Mechanical stripping of PVC jacketing. Phase 2: Copper shredding and high-temp smelting." }
+                { name: "Smartphone Architecture (Lithium/Gold)", cat: 100, process: "Phase 1: Thermal detachment of Lithium-ion cell. Phase 2: Micro-shredding of PCB for chemical leaching of Gold (Au) and Palladium (Pd)." },
+                { name: "Damaged LCD Array", cat: 500, process: "Phase 1: Vacuum containment and extraction of mercury vapor tubes. Phase 2: Automated glass sorting and polymer casing granulation." },
+                { name: "High-Gauge Copper Wiring", cat: 50, process: "Phase 1: Precision mechanical stripping of PVC insulating jacket. Phase 2: Copper filament shredding and high-temperature smelting." }
             ];
             const result = models[Math.floor(Math.random() * models.length)];
             
-            document.getElementById('item-name').value = "AI Detected: " + result.name;
+            document.getElementById('item-name').value = "AI Matrix Detected: " + result.name;
             document.getElementById('item-cat').value = result.cat;
             aiDeterminedProcess = result.process;
 
-            aiBox.innerHTML = `<strong><i class="fas fa-check-double" style="color:#00ff80;"></i> Scrap Classified:</strong> ${result.name}<br><br><strong><i class="fas fa-recycle"></i> Recommended Processing:</strong><br>${result.process}`;
-            showToast("AI Classification Complete!");
+            aiBox.innerHTML = `<strong style="font-size:1.1rem;"><i class="fas fa-check-double" style="color:#00ff80;"></i> Material Classified:</strong> ${result.name}<br><br><strong><i class="fas fa-cogs"></i> Recovery Protocol:</strong><br>${result.process}`;
+            showToast("Neural Classification Complete");
         }, 3000);
     }
 
-    // --- USER DATA & DYNAMIC DASHBOARD ---
+    // --- DATA SUBMISSION & DASHBOARD ---
     function animateValue(id, start, end, duration) {
         if (start === end) return;
         const obj = document.getElementById(id);
-        obj.classList.add('bounce');
+        obj.style.transform = 'scale(1.2)'; obj.style.textShadow = '0 0 30px var(--primary)';
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             obj.innerHTML = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            } else {
-                obj.classList.remove('bounce');
-            }
+            if (progress < 1) { window.requestAnimationFrame(step); } 
+            else { obj.style.transform = 'scale(1)'; obj.style.textShadow = 'none'; }
         };
         window.requestAnimationFrame(step);
     }
@@ -434,106 +600,76 @@
     function addEntry() {
         const name = document.getElementById('item-name').value;
         const pts = parseInt(document.getElementById('item-cat').value);
-
-        if (!name || !capturedImage) {
-            showToast("Please upload a photo and wait for AI analysis.", "error");
-            return;
-        }
+        if (!name || !capturedImage) { showToast("Upload image and await AI classification first.", "error"); return; }
 
         const entry = {
-            id: Date.now(),
-            userEmail: session.email,
-            name, 
-            points: pts, 
-            image: capturedImage, 
-            coords: selectedCoords, 
-            date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + new Date().toLocaleDateString(),
-            status: "Pending",
-            aiProcess: aiDeterminedProcess || "Standard Sort"
+            id: Date.now(), userEmail: session.email, name, points: pts, image: capturedImage, 
+            coords: selectedCoords, date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' | ' + new Date().toLocaleDateString(),
+            status: "Pending", aiProcess: aiDeterminedProcess || "Standard Sort"
         };
 
-        data.items.unshift(entry);
-        data.points += pts;
+        data.items.unshift(entry); data.points += pts;
         localStorage.setItem('ecocycle_v4', JSON.stringify(data));
         
-        if(window.fireConfetti) window.fireConfetti();
-        showToast(`Securely transmitted to Municipal Dashboard! +${pts} Credits.`);
-        updateUI();
-        resetForm();
+        window.fireConfetti();
+        showToast(`Signal Transmitted! +${pts} CR.`);
+        updateUI(); resetForm();
     }
 
     function resetForm() {
-        document.getElementById('item-name').value = "";
-        document.getElementById('file-input').value = "";
-        document.getElementById('scan-wrapper').style.display = 'none';
-        document.getElementById('upload-label').style.display = 'block';
-        document.getElementById('ai-process-info').style.display = 'none';
-        capturedImage = "";
-        aiDeterminedProcess = "";
+        document.getElementById('item-name').value = ""; document.getElementById('file-input').value = "";
+        document.getElementById('scan-wrapper').style.display = 'none'; document.getElementById('upload-label').style.display = 'flex';
+        document.getElementById('ai-process-info').style.display = 'none'; capturedImage = ""; aiDeterminedProcess = "";
     }
 
     function updateUI() {
         if(!session || session.role === 'municipal') return; 
 
-        const newTotal = data.items
-            .filter(i => i.userEmail === session.email)
-            .reduce((sum, item) => sum + item.points, 0);
-            
-        animateValue("total-points", displayedPoints, newTotal, 1500);
-        displayedPoints = newTotal;
+        const newTotal = data.items.filter(i => i.userEmail === session.email).reduce((sum, item) => sum + item.points, 0);
+        animateValue("total-points", displayedPoints, newTotal, 1500); displayedPoints = newTotal;
 
         const list = document.getElementById('activity-list');
         const userItems = data.items.filter(i => i.userEmail === session.email);
 
         if (userItems.length === 0) {
-            list.innerHTML = `<p style="text-align:center; opacity:0.4; font-size: 0.9rem; padding: 20px;">No active queries. Run your first AI scan!</p>`;
-            return;
+            list.innerHTML = `<p style="text-align:center; opacity:0.4; font-size: 0.9rem; padding: 20px;">System dormant. Awaiting first upload.</p>`; return;
         }
 
         list.innerHTML = userItems.slice(0, 5).map((i, index) => {
-            let statusClass = i.status === 'Done' ? 'status-done' : (i.status === 'In Progress' ? 'status-progress' : 'status-pending');
+            let statusColor = i.status === 'Done' ? '#00ff80' : (i.status === 'In Progress' ? '#00f2fe' : '#ffc107');
             return `
                 <div class="history-item" style="animation-delay: ${index * 0.1}s">
-                    <div style="display:flex;">
-                        <img src="${i.image}" class="thumb" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px;">
+                    <div style="display:flex; align-items: center;">
+                        <img src="${i.image}" style="width: 65px; height: 65px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); margin-right: 15px;">
                         <div style="flex:1;">
-                            <div style="font-weight:700; font-size: 0.95rem;">${i.name}</div>
-                            <div style="font-size:0.75rem; color: var(--text-dim); margin-top: 4px;">
-                                <i class="far fa-clock"></i> ${i.date}
-                            </div>
+                            <div style="font-weight:800; font-size: 1rem;">${i.name}</div>
+                            <div style="font-size:0.75rem; color: var(--text-dim); margin-top: 5px;"><i class="far fa-clock"></i> ${i.date}</div>
                         </div>
                     </div>
-                    <div style="margin-top: 10px; display:flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.8rem; color: var(--primary); font-weight: 800;">+${i.points} CR</span>
-                        <span class="status-badge ${statusClass}">${i.status || 'Pending'}</span>
+                    <div style="margin-top: 15px; display:flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <span style="font-size: 0.9rem; color: var(--primary); font-weight: 800;">+${i.points} CR</span>
+                        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.4);">${i.status || 'Pending'}</span>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    // --- BOOTSTRAPPING LOGIC ---
-    // Ensure DOM is fully loaded before rendering map
+    // --- BOOTSTRAP ---
     document.addEventListener("DOMContentLoaded", () => {
         if (!session) {
             document.getElementById('file-input').disabled = true;
             document.getElementById('upload-label').onclick = (e) => { e.preventDefault(); window.location.href='auth.html'; };
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('submit-btn').innerText = "Login to Submit";
+            document.getElementById('submit-btn').disabled = true; document.getElementById('submit-btn').innerText = "System Locked: Login Required";
             document.getElementById('submit-btn').onclick = () => window.location.href='auth.html';
-            initMap();
-            updateUI();
+            initMap(); updateUI();
         } else {
             document.getElementById('bottom-auth-bar').style.display = 'none';
-            document.getElementById('user-greeting').innerHTML = `<i class="fas fa-user-circle"></i> ${session.email} (${session.role})`;
+            document.getElementById('user-greeting').innerHTML = `<i class="fas fa-user-circle"></i> ${session.email} <span style="opacity:0.6; font-size:0.8rem;">[${session.role.toUpperCase()}]</span>`;
             document.getElementById('logout-btn').style.display = 'block';
 
-            if (session.role === 'municipal') {
-                renderMunicipalDashboard();
-            } else {
-                initMap();
-                updateUI();
-            }
+            if (session.role === 'municipal') { renderMunicipalDashboard(); } 
+            else { initMap(); updateUI(); }
         }
     });
 </script>
