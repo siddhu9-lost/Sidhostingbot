@@ -377,39 +377,93 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- CONFETTI & UI EFFECTS ENGINE ---
-    window.fireConfetti = function() {
-        const colors = ['#00f2fe', '#4facfe', '#f0abfc', '#ffffff'];
-        for (let i = 0; i < 80; i++) {
-            const particle = document.createElement('div');
-            particle.style.position = 'fixed'; particle.style.top = '50%'; particle.style.left = '50%';
-            particle.style.width = Math.random() * 8 + 4 + 'px'; particle.style.height = particle.style.width;
-            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.borderRadius = '50%'; particle.style.pointerEvents = 'none'; particle.style.zIndex = '9999';
-            document.body.appendChild(particle);
-            const angle = Math.random() * Math.PI * 2; const velocity = 10 + Math.random() * 20;
-            const tx = Math.cos(angle) * velocity * 25; const ty = Math.sin(angle) * velocity * 25 - 150;
-            particle.animate([
-                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-                { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
-            ], { duration: 1000 + Math.random() * 1000, easing: 'cubic-bezier(0, .9, .57, 1)' }).onfinish = () => particle.remove();
-        }
-    };
-
-    function showToast(message, type = "success") {
-        const toast = document.createElement('div');
-        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
-        toast.style.cssText = `
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: ${type === 'error' ? 'rgba(255, 50, 50, 0.95)' : 'rgba(0, 242, 254, 0.95)'};
-            color: ${type === 'error' ? '#fff' : '#030712'}; padding: 16px 32px; border-radius: 50px; 
-            font-weight: 800; font-size: 1rem; box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px);
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 12px;
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.style.transform = 'translateX(-50%) translateY(0)', 10);
-        setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(100px)'; setTimeout(() => toast.remove(), 500); }, 3500);
+   // 1. Futuristic UI Sound Engine
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(freq = 600, type = 'sine', duration = 0.15) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = type; 
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
+        
+        osc.connect(gainNode); 
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start(); 
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
     }
+
+    // Attach sounds to all buttons automatically without breaking existing onclicks
+    document.addEventListener('click', (e) => {
+        if(e.target.closest('.btn') || e.target.closest('.gps-btn')) {
+            playBeep(880, 'triangle', 0.1);
+        }
+    });
+
+    // 2. Impact Report / Traction Generator
+    function generateImpactReport() {
+        if(data.items.length === 0) { 
+            showToast("No data to export yet! Scan an item first.", "error"); 
+            return; 
+        }
+        
+        let report = "ECOCYCLE PRO - IMPACT TRACTION REPORT\n";
+        report += "=".repeat(40) + "\n";
+        report += `Network ID: ${session ? session.email : 'Guest'}\n`;
+        report += `Total Green Credits Earned: ${data.points} CR\n`;
+        report += `Total Hardware Recovered: ${data.items.length} units\n`;
+        report += "=".repeat(40) + "\n\n";
+        
+        data.items.forEach((item, i) => {
+            report += `[Unit ${i+1}] ${item.name}\n`;
+            report += `  - Value: ${item.points} CR\n`;
+            report += `  - Location: ${item.coords[0].toFixed(4)}, ${item.coords[1].toFixed(4)}\n`;
+            report += `  - Status: ${item.status}\n`;
+            report += `  - AI Process: ${item.aiProcess}\n\n`;
+        });
+        
+        // Create and trigger download
+        const blob = new Blob([report], { type: 'text/plain' });
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = `EcoCycle_Traction_${new Date().getTime()}.txt`;
+        downloadLink.click();
+        
+        showToast("Impact Report Compiled & Downloaded!");
+        playBeep(1200, 'square', 0.2); // Success chime
+    }
+
+    // Dynamically inject the Report button into the UI after load
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const sidebar = document.getElementById('user-sidebar-area');
+            if(sidebar && session && session.role !== 'municipal') {
+                const exportBtnHTML = `
+                    <button onclick="generateImpactReport()" class="btn" style="margin-top: 20px; background: rgba(240, 171, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); box-shadow: none;">
+                        <i class="fas fa-file-download"></i> Export Data Log
+                    </button>
+                `;
+                sidebar.insertAdjacentHTML('beforeend', exportBtnHTML);
+            }
+        }, 1000);
+    });
+
+    // 3. Dynamic Browser Tab Alerts
+    let originalTitle = document.title;
+    let titleInterval = setInterval(() => {
+        // Flash the title if there are completed items
+        const hasCompleted = data.items.some(i => i.status === 'Done');
+        if(hasCompleted && document.hidden) {
+            document.title = document.title === originalTitle ? "(1) Recovery Complete!" : originalTitle;
+        } else {
+            document.title = originalTitle;
+        }
+    }, 2000);
 
     // --- STATE MANAGEMENT ---
     let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
