@@ -724,26 +724,7 @@
             report += `  - AI Process: ${item.aiProcess}\n\n`;
         });
         <script>
-    // 1. Futuristic UI Sound Engine
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playBeep(freq = 600, type = 'sine', duration = 0.15) {
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        osc.type = type; 
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
-        
-        osc.connect(gainNode); 
-        gainNode.connect(audioCtx.destination);
-        
-        osc.start(); 
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        osc.stop(audioCtx.currentTime + duration);
-    }
+   
 
     // Attach sounds to all buttons automatically without breaking existing onclicks
     document.addEventListener('click', (e) => {
