@@ -376,6 +376,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    
     // --- CONFETTI & UI EFFECTS ENGINE ---
     window.fireConfetti = function() {
         const colors = ['#00f2fe', '#4facfe', '#f0abfc', '#ffffff'];
@@ -672,6 +673,94 @@
             else { initMap(); updateUI(); }
         }
     });
+    <script>
+    // 1. Futuristic UI Sound Engine
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(freq = 600, type = 'sine', duration = 0.15) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = type; 
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
+        
+        osc.connect(gainNode); 
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start(); 
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Attach sounds to all buttons automatically without breaking existing onclicks
+    document.addEventListener('click', (e) => {
+        if(e.target.closest('.btn') || e.target.closest('.gps-btn')) {
+            playBeep(880, 'triangle', 0.1);
+        }
+    });
+
+    // 2. Impact Report / Traction Generator
+    function generateImpactReport() {
+        if(data.items.length === 0) { 
+            showToast("No data to export yet! Scan an item first.", "error"); 
+            return; 
+        }
+        
+        let report = "ECOCYCLE PRO - IMPACT TRACTION REPORT\n";
+        report += "=".repeat(40) + "\n";
+        report += `Network ID: ${session ? session.email : 'Guest'}\n`;
+        report += `Total Green Credits Earned: ${data.points} CR\n`;
+        report += `Total Hardware Recovered: ${data.items.length} units\n`;
+        report += "=".repeat(40) + "\n\n";
+        
+        data.items.forEach((item, i) => {
+            report += `[Unit ${i+1}] ${item.name}\n`;
+            report += `  - Value: ${item.points} CR\n`;
+            report += `  - Location: ${item.coords[0].toFixed(4)}, ${item.coords[1].toFixed(4)}\n`;
+            report += `  - Status: ${item.status}\n`;
+            report += `  - AI Process: ${item.aiProcess}\n\n`;
+        });
+        
+        // Create and trigger download
+        const blob = new Blob([report], { type: 'text/plain' });
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = `EcoCycle_Traction_${new Date().getTime()}.txt`;
+        downloadLink.click();
+        
+        showToast("Impact Report Compiled & Downloaded!");
+        playBeep(1200, 'square', 0.2); // Success chime
+    }
+
+    // Dynamically inject the Report button into the UI after load
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const sidebar = document.getElementById('user-sidebar-area');
+            if(sidebar && session && session.role !== 'municipal') {
+                const exportBtnHTML = `
+                    <button onclick="generateImpactReport()" class="btn" style="margin-top: 20px; background: rgba(240, 171, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); box-shadow: none;">
+                        <i class="fas fa-file-download"></i> Export Data Log
+                    </button>
+                `;
+                sidebar.insertAdjacentHTML('beforeend', exportBtnHTML);
+            }
+        }, 1000);
+    });
+
+    // 3. Dynamic Browser Tab Alerts
+    let originalTitle = document.title;
+    let titleInterval = setInterval(() => {
+        // Flash the title if there are completed items
+        const hasCompleted = data.items.some(i => i.status === 'Done');
+        if(hasCompleted && document.hidden) {
+            document.title = document.title === originalTitle ? "(1) Recovery Complete!" : originalTitle;
+        } else {
+            document.title = originalTitle;
+        }
+    }, 2000);
 </script>
 </body>
 </html>
