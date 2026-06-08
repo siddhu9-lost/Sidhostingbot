@@ -3,33 +3,29 @@ let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], point
 let selectedCoords = [19.076, 72.877];
 let capturedImage = "";
 let previousPoints = data.points; // For the counting animation
-// --- MAP & LIVE TRACKING LOGIC ---
-    let map, marker;
-    function initMap() {
-        // Prevent initialization errors if map already exists
-        if (map !== undefined) { map.remove(); }
+// --- MAP INITIALIZATION ---
+const map = L.map('map', { 
+    zoomControl: false, 
+    attributionControl: false 
+}).setView(selectedCoords, 15);
 
-        // Initialize targeting Sangamner coordinates
-        map = L.map('map', { zoomControl: false, attributionControl: false }).setView(selectedCoords, 15);
-        
-        // FIX 1: Upgraded to ultra-reliable Google Satellite Tiles
-        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { 
-            maxZoom: 20 
-        }).addTo(map);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { 
-            pane: 'shadowPane' 
-        }).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
+    maxZoom: 19 
+}).addTo(map);
 
-        marker = L.marker(selectedCoords, {
-            draggable: true,
-            icon: L.divIcon({
-                className: 'custom-div-icon',
-                html: "<div style='background-color:var(--primary); width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 20px var(--primary); animation: pulse 1.5s infinite;'></div>",
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
-            })
-        }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { 
+    pane: 'shadowPane' 
+}).addTo(map);
+
+let marker = L.marker(selectedCoords, {
+    draggable: true,
+    icon: L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:var(--primary); width:15px; height:15px; border-radius:50%; border:2px solid white; box-shadow:0 0 15px var(--primary);'></div>",
+        iconSize: [15, 15],
+        iconAnchor: [7, 7]
+    })
+}).addTo(map);
 
         map.on('click', function(e) { 
             if(liveWatchId) toggleLiveLocation(); 
