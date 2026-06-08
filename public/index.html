@@ -105,10 +105,10 @@
 <div class="container" id="app-container">
     <main id="user-submit-area">
         <div class="box">
-            <h3><i class="fas fa-satellite" style="color: var(--primary);"></i> 1. Satellite Target</h3>
+            <h3><i class="fas fa-satellite" style="color: var(--primary);"></i> 1. Live Satellite Target</h3>
             <div id="map"></div>
             <div id="loc-status"><i class="fas fa-crosshairs"></i> Awaiting precise location...</div>
-            <button class="gps-btn" onclick="useCurrentLocation()"><i class="fas fa-location-arrow"></i> Use My GPS Location</button>
+            <button class="gps-btn" id="gps-btn" onclick="toggleLiveLocation()"><i class="fas fa-location-arrow"></i> Enable Live Tracking</button>
         </div>
 
         <div class="box">
@@ -168,10 +168,11 @@
     // --- STATE & AUTH MANAGEMENT ---
     let data = JSON.parse(localStorage.getItem('ecocycle_v4')) || { items: [], points: 0 };
     let session = JSON.parse(localStorage.getItem('ecocycle_session'));
-    let selectedCoords = [19.576, 74.205]; // Dynamic Default Map targeting Sangamner
+    let selectedCoords = [19.576, 74.205]; // Default Map
     let capturedImage = "";
     let aiDeterminedProcess = "";
     let displayedPoints = 0;
+    let liveWatchId = null;
 
     function showToast(message, type = "success") {
         const toast = document.createElement('div');
@@ -274,7 +275,7 @@
         }
     }
 
-    // --- MAP & LOCATION LOGIC ---
+    // --- MAP & LIVE TRACKING LOGIC ---
     let map, marker;
     function initMap() {
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView(selectedCoords, 15);
@@ -291,11 +292,16 @@
             })
         }).addTo(map);
 
-        // Map Interaction with dynamic flyTo
-        map.on('click', function(e) { updateLocation(e.latlng.lat, e.latlng.lng, true); });
-        marker.on('dragend', function() { const pos = marker.getLatLng(); updateLocation(pos.lat, pos.lng, true); });
+        map.on('click', function(e) { 
+            if(liveWatchId) toggleLiveLocation(); // Stop tracking if user manually clicks map
+            updateLocation(e.latlng.lat, e.latlng.lng, true); 
+        });
         
-        // Dynamic Marker Pulse
+        marker.on('dragend', function() { 
+            if(liveWatchId) toggleLiveLocation(); 
+            const pos = marker.getLatLng(); updateLocation(pos.lat, pos.lng, true); 
+        });
+        
         if(!document.getElementById('pulse-style')) {
             const style = document.createElement('style');
             style.id = 'pulse-style';
@@ -307,8 +313,9 @@
     function updateLocation(lat, lng, fly = false) {
         selectedCoords = [lat, lng];
         marker.setLatLng([lat, lng]);
+        
         if(fly) {
-            map.flyTo([lat, lng], 16, { duration: 1.2, easeLinearity: 0.25 });
+            map.flyTo([lat, lng], 17, { duration: 1.2, easeLinearity: 0.25 });
         } else {
             map.panTo([lat, lng]);
         }
@@ -317,16 +324,42 @@
         locStatus.style.background = 'rgba(0, 255, 128, 0.1)';
         locStatus.style.borderColor = 'rgba(0, 255, 128, 0.3)';
         locStatus.style.color = '#00ff80';
-        locStatus.innerHTML = `<i class="fas fa-check-circle"></i> Target Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        locStatus.innerHTML = `<i class="fas fa-satellite-dish"></i> Satellite Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     }
 
-    function useCurrentLocation() {
-        if ("geolocation" in navigator) {
-            showToast("Acquiring satellite lock...", "success");
-            navigator.geolocation.getCurrentPosition(position => {
-                updateLocation(position.coords.latitude, position.coords.longitude, true);
-                showToast("GPS Lock Acquired!");
-            }, () => showToast("Location access denied.", "error"));
+    // Toggle Continuous GPS Tracking
+    function toggleLiveLocation() {
+        const btn = document.getElementById('gps-btn');
+        
+        if (liveWatchId) {
+            // Stop Tracking
+            navigator.geolocation.clearWatch(liveWatchId);
+            liveWatchId = null;
+            btn.innerHTML = `<i class="fas fa-location-arrow"></i> Enable Live Tracking`;
+            btn.style.background = 'rgba(0, 242, 254, 0.1)';
+            showToast("Live tracking suspended.", "error");
+        } else {
+            // Start Tracking
+            if ("geolocation" in navigator) {
+                showToast("Acquiring continuous GPS lock...", "success");
+                btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Tracking Active...`;
+                btn.style.background = 'rgba(0, 255, 128, 0.2)';
+                
+                let isFirstLock = true;
+                liveWatchId = navigator.geolocation.watchPosition(position => {
+                    updateLocation(position.coords.latitude, position.coords.longitude, isFirstLock);
+                    isFirstLock = false; // Only do the cinematic "flyTo" zoom on the very first lock
+                }, error => {
+                    showToast("GPS signal lost or denied.", "error");
+                    toggleLiveLocation(); // reset button state
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 5000
+                });
+            } else {
+                showToast("Geolocation not supported.", "error");
+            }
         }
     }
 
@@ -344,7 +377,6 @@
                 preview.src = capturedImage;
                 document.getElementById('upload-label').style.display = 'none';
                 
-                // Show Image and trigger dynamic scanner
                 wrapper.style.display = 'block';
                 scanLine.style.display = 'block';
                 scanLine.style.animation = 'scanMotion 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite';
@@ -362,16 +394,15 @@
         aiBox.innerHTML = `<i class="fas fa-crosshairs fa-spin" style="color:var(--primary);"></i> Neural Network scanning scrap architecture...`;
         
         setTimeout(() => {
-            document.getElementById('scan-line').style.display = 'none'; // Stop scanner
+            document.getElementById('scan-line').style.display = 'none';
             
             const models = [
-                { name: "Smartphone / Mobile Board", cat: 100, process: "Phase 1: Lithium-ion battery extracted safely. Phase 2: PCB shredded for chemical precious metal leaching (Gold/Palladium)." },
-                { name: "Damaged LCD Monitor", cat: 500, process: "Phase 1: Vacuum extraction of cold cathode fluorescent lamps (mercury). Phase 2: Glass sorting and plastic casing granulation." },
+                { name: "Smartphone / Mobile Board", cat: 100, process: "Phase 1: Lithium-ion battery extracted safely. Phase 2: PCB shredded for chemical precious metal leaching." },
+                { name: "Damaged LCD Monitor", cat: 500, process: "Phase 1: Vacuum extraction of cold cathode fluorescent lamps (mercury). Phase 2: Glass sorting." },
                 { name: "Mixed Copper Wiring", cat: 50, process: "Phase 1: Mechanical stripping of PVC jacketing. Phase 2: Copper shredding and high-temp smelting." }
             ];
             const result = models[Math.floor(Math.random() * models.length)];
             
-            // Dynamic typing effect for AI output
             document.getElementById('item-name').value = "AI Detected: " + result.name;
             document.getElementById('item-cat').value = result.cat;
             aiDeterminedProcess = result.process;
@@ -444,7 +475,6 @@
     function updateUI() {
         if(!session || session.role === 'municipal') return; 
 
-        // Calculate points dynamically
         const newTotal = data.items
             .filter(i => i.userEmail === session.email)
             .reduce((sum, item) => sum + item.points, 0);
